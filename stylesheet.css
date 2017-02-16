@@ -1,0 +1,39 @@
+body {
+  background-color: black;
+  margin: 0px;
+}
+
+@font-face {
+  font-family: 'Gaiatype';
+  src: url('./font/Gaiatype.eot');
+  src: url('./font/Gaiatype.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('./font/Gaiatype.woff') format('woff'), /* Pretty Modern Browsers */
+       url('./font/Gaiatype.ttf')  format('truetype'), /* Safari, Android, iOS */
+       url('./font/Gaiatype.svg#svgFontName') format('svg'); /* Legacy iOS */
+}
+
+.msg{
+  font-family: Gaiatype;
+  color: white;
+  text-shadow: 3px 3px 0px #BF4494;
+  font-size: 36px;
+  text-align: left;
+  word-wrap: break-word;
+}
+
+.anyText {
+  font-family: Gaiatype;
+  color: white;
+  text-shadow: 3px 3px 0px #BF4494;
+}
+
+#bigOldTitle {
+  font-size: 56px;
+  text-align: center;
+  padding-top: 40vh;
+  z-index: 1;
+}
+
+h3 {
+  font-size: 28px;
+}
