@@ -10,4 +10,3 @@ It is in extremely early stages. There are likely ugly or nonsensical patches of
 
 Should someone feel they should take over, feeling better equipped to handle the project and seeing the tradgedy of my coding, feel free to mention this.
 
-# WelcometoMoonPrison-tmh
