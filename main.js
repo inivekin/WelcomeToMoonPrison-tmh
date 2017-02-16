@@ -142,7 +142,24 @@ var showLine = function (stringLine, interval, extra, check) {
 
 };
 
+var addAudio = function ( id, location) {
+  var audio = document.createElement('audio');
+  $('body').append(audio);
+  $(audio).attr('id', id).attr('src', location);
+};
+
+
+//id for added element, TODO duration optional-not yet implemented
+var playAudio = function (id, duration) {
+  $('#' + id).get(0).play();
+  if(!duration == undefined) {
+    // code here eventually
+  }
+};
+
 function gameIntro () {
+  addAudio('einstein', './audio/EOTB.webm');
+  playAudio('einstein');
   showLine('You\'ve done a terrible thing you can\'t remember.', 50);
   showLine('Something just terribly awful.', 50);
   showLine('You should be ashamed.', 50, 1500);
