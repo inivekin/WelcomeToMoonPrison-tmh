@@ -76,6 +76,8 @@ var loadOpening = function (count) {
       }, 500);
       $(document).unbind('click');
     }
+
+    $.getScript('/scenes/scene1.js');
   });
 };
 
