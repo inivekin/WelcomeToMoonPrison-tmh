@@ -76,9 +76,9 @@ function loadOpening () {
   $('#bigOldTitle').fadeIn(500, function () { $('#instructor').fadeIn(800); });
 
 
-  // generate and loop stars
-  var starNum = 31;
-  for (var i = 0; i < starNum; i++) {                                           // TODO make star number dependent on window size
+  // generate a number of stars proportionate to viewport size and loop fade-in/fade-out
+  var starNum = $(window).width() * $(window).height() * 5.0e-5;
+  for (var i = 0; i < starNum; i++) {
     randomStars(i);
     fadeloop ('#star' + i, 1500, 1200, true, starNum);
   }
