@@ -73,7 +73,7 @@ function loadOpening () {
   $(instruct).attr('class', 'anyText').attr('id', 'instructor'); // .css('opacity', '0.0');
   instruct.innerHTML = '[click to play]';
   $('#bigOldTitle').append(instruct);
-  $('#bigOldTitle').fadeIn(500, 'swing', function () { $('#instructor').fadeIn(800); });
+  $('#bigOldTitle').fadeIn(500, function () { $('#instructor').fadeIn(800); });
 
 
   // generate and loop stars
@@ -190,16 +190,16 @@ function nextScreenLoader(functionToRun, screenPause) {
   var nextScreenLoader = setTimeout(function () {
     $(document).unbind('mousedown.screenBreak');
     nextScreenLoader.noBreakCheck = true;
-    functionToRun();
-    clearScreen(screenPause - 300, ['.msg', '.pBreaks'], 300);
-  }, this.totalDelay + screenPause);
+    clearScreen(300, ['.msg', '.pBreaks'], 300);
+    setTimeout(function () { functionToRun(); }, screenPause);
+    }, this.totalDelay + screenPause);
 
   $(document).bind('mousedown.screenBreak', function () {
     $(document).unbind('mousedown.screenBreak');
       if (!nextScreenLoader.noBreakCheck) {
       clearTimeout(nextScreenLoader);
-      setTimeout(function () { functionToRun(); }, screenPause);
       clearScreen(screenPause - 300, ['.msg', '.pBreaks'], 300);
+      setTimeout(function () { functionToRun(); }, screenPause);
       }
   });
 };
@@ -213,7 +213,7 @@ function gameIntro () {
   showLine('Something just terribly awful.', 50);
   showLine('You should be ashamed.', 50, 1500);
   showLine('You should be locked up.', 100);
-  nextScreenLoader(loadOpening, 1500);
+  nextScreenLoader(loadOpening, 1000);
 
 }
 
