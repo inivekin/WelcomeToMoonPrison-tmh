@@ -26,6 +26,7 @@ fadeTime: time for elements to fade out
 screenPause tends to be equal or sometimes greater than fadeTime slightly
 */
 function clearScreen (screenPause, element, fadeTime) {
+  console.log('clearing screen');
   screenPause = (screenPause === undefined ? 1000 : screenPause);
   fadeTime = (fadeTime === undefined ? 300 : fadeTime);
   element = (element === undefined ? ['.msg', '.pbreaks'] : element);
@@ -44,23 +45,21 @@ function clearScreen (screenPause, element, fadeTime) {
 
 function randomStars (i) {
                                                                           // TODO randomize font-size instead
-    var divSize = ((Math.random() * 16) + 16).toFixed();
+    var divsize = ((Math.random() * 16) + 16).toFixed();
     $newdiv = $('<div/>').attr('id', 'star' + i).css({
-        'font-size'   : divSize + 'px'
+        'font-size'   : divsize + 'px'
     });
-    var viewportWidth = $(window).width()
-    var viewportHeight = $(window).height()
-    // FIXME try to keep star locations away from title (low priority)
-    var posX = ((Math.random() * (viewportWidth - divSize)) * 100  / viewportWidth).toFixed();
-    var posY = ((Math.random() * (viewportHeight - divSize)) * 100 / viewportHeight).toFixed();
+                                                                          // makes position sensitive to size and document's width
+    var posx = (Math.random() * ($(document).width() - divsize)).toFixed();   // FIXME try to keep star locations away from title (low priority)
+    var posy = (Math.random() * ($(document).height() - divsize)).toFixed();  // FIXME on window resize stars remain oddly positioned (low priority)
 
     $newdiv.css({
         'font-family' : 'Gaiatype',
         'color'       : 'white',
         'text-shadow' : '3px 3px 0px #BF4494',
         'position'    : 'absolute',
-        'left'        : posX + '%',
-        'top'         : posY + '%',
+        'left'        : posx + 'px',
+        'top'         : posy + 'px',
         'display'     : 'none'
     }).html('*').appendTo('body');
 }
@@ -78,9 +77,9 @@ function loadOpening () {
   $('#bigOldTitle').fadeIn(500, function () { $('#instructor').fadeIn(800); });
 
 
-  // generate a number of stars proportionate to viewport size and loop fade-in/fade-out
-  var starNum = $(window).width() * $(window).height() * 5.0e-5;
-  for (var i = 0; i < starNum; i++) {
+  // generate and loop stars
+  var starNum = 31;
+  for (var i = 0; i < starNum; i++) {                                           // TODO make star number dependent on window size
     randomStars(i);
     fadeloop ('#star' + i, 1500, 1200, true, starNum);
   }
@@ -109,32 +108,37 @@ function loadOpening () {
   });
 }
 
-var showText = function (target, message, index, interval, count) {       // incremental reveal of each character
+var showText = function (targetChild, targetParent, message, index, interval, count) {       // incremental reveal of each character
+  console.log(message);
+  console.log(message.length);
   if (index < message.length) {
-    $('#msg' + count).append(message[index++]);
-    console.log('showText: ' + count);
+    console.log(message[index]);
+    $(targetChild + count).append(message[index++]);
+    console.log(targetChild);
     $(document).bind('mousedown.screenSkip', function () {
-      //interval = 0;
-      index = message.length + 1;
+      interval = 10;
+      //index = message.length + 1;
       if(!screenBreakCheck) {
-        screenBreak(count);
+        screenBreak(targetChild, targetParent, count);
         screenBreakCheck = true;
     }
 
       $(document).unbind('mousedown.screenSkip');
     });
-    setTimeout(function () { showText('#msg' + count, message, index, interval, count); }, interval);
+    setTimeout(function () { showText(targetChild, targetParent, message, index, interval, count); }, interval);
   }
 };
 
-var screenBreak = function (count) {
-  for (var i = 0; i < stringArray.length; i++) {
+var screenBreak = function (targetChild, targetParent, count) {
+  for (var i = count + 1; i < stringArray.length; i++) {
     clearTimeout(curLine[i]);
-    $('#msg' + i).html('');
-    showText('#txtDiv', stringArray[i], 0, 0, i);
+    $(targetChild + i).html('');
+    showText(targetChild, targetParent, stringArray[i], 0, 10, i);            // TODO maybe give a small incrementing delay instead of them all starting at once (low priority)?
+
     }
     check = true;
 };
+
 
 /*
 stringLine is the message, write as a string.
@@ -152,8 +156,6 @@ var showLine = function (stringLine, interval, extra, check) {
     this.totalDelay = 0;
   }
 
-  console.log(this.totalDelay);
-
   var count = (this.count === undefined ? count : this.count);
   var newPara = document.createElement('p');
   newPara.setAttribute('id', 'msg' + count);
@@ -164,7 +166,7 @@ var showLine = function (stringLine, interval, extra, check) {
   lineBreak.setAttribute('class', 'pBreaks');
   $('#txtDiv').append(lineBreak);
 
-  curLine[count] = setTimeout(function () { showText('#txtDiv', stringLine, 0, interval, count); }, this.totalDelay);
+  curLine[count] = setTimeout(function () { showText('#msg', '#txtDiv', stringLine, 0, interval, count); }, this.totalDelay);
   stringArray[count] = stringLine;
   this.oldInterval = interval;
   this.totalDelay = this.totalDelay + (stringArray[count].length * this.oldInterval) + (extra === undefined ? 500 : extra);
@@ -172,6 +174,28 @@ var showLine = function (stringLine, interval, extra, check) {
 
   console.log(stringArray[count]);
 };
+
+function answerOptions (options) {
+  var answerDiv = document.createElement('div');
+  answerDiv.setAttribute('id', 'answerDiv');
+  answerDiv.setAttribute('class', 'anyText');
+  $('body').append(answerDiv);
+  var answers = [], ansDel;
+  for (var i = 0; i < stringArray.length; i++) {
+    ansDel = stringArray[i].length * 50;
+  }
+  setTimeout( function () {
+  for (var i = 0; i < options.length; i++) {
+    answers[i] = document.createElement('p');
+    answers[i].setAttribute('id', 'answerOp' + i);
+    $('#answerDiv').append(answers[i]);
+    console.log(options);
+    console.log(options[i]);
+      showText('#answerOp', '#answerDiv', options[i], 0, 50, i);
+    }
+    }, ansDel);
+  }
+
 
 var addAudio = function ( id, location) {
   var audio = document.createElement('audio');
