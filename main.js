@@ -45,21 +45,23 @@ function clearScreen (screenPause, element, fadeTime) {
 
 function randomStars (i) {
                                                                           // TODO randomize font-size instead
-    var divsize = ((Math.random() * 16) + 16).toFixed();
+    var divSize = ((Math.random() * 16) + 16).toFixed();
     $newdiv = $('<div/>').attr('id', 'star' + i).css({
-        'font-size'   : divsize + 'px'
+        'font-size'   : divSize + 'px'
     });
-                                                                          // makes position sensitive to size and document's width
-    var posx = (Math.random() * ($(document).width() - divsize)).toFixed();   // FIXME try to keep star locations away from title (low priority)
-    var posy = (Math.random() * ($(document).height() - divsize)).toFixed();  // FIXME on window resize stars remain oddly positioned (low priority)
+    var viewportWidth = $(window).width()
+    var viewportHeight = $(window).height()
+    // FIXME try to keep star locations away from title (low priority)
+    var posX = ((Math.random() * (viewportWidth - divSize)) * 100  / viewportWidth).toFixed();
+    var posY = ((Math.random() * (viewportHeight - divSize)) * 100 / viewportHeight).toFixed();
 
     $newdiv.css({
         'font-family' : 'Gaiatype',
         'color'       : 'white',
         'text-shadow' : '3px 3px 0px #BF4494',
         'position'    : 'absolute',
-        'left'        : posx + 'px',
-        'top'         : posy + 'px',
+        'left'        : posX + '%',
+        'top'         : posY + '%',
         'display'     : 'none'
     }).html('*').appendTo('body');
 }
@@ -77,9 +79,9 @@ function loadOpening () {
   $('#bigOldTitle').fadeIn(500, function () { $('#instructor').fadeIn(800); });
 
 
-  // generate and loop stars
-  var starNum = 31;
-  for (var i = 0; i < starNum; i++) {                                           // TODO make star number dependent on window size
+  // generate a number of stars proportionate to viewport size and loop fade-in/fade-out
+  var starNum = $(window).width() * $(window).height() * 5.0e-5;
+  for (var i = 0; i < starNum; i++) {
     randomStars(i);
     fadeloop ('#star' + i, 1500, 1200, true, starNum);
   }
