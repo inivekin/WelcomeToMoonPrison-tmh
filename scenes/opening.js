@@ -2,9 +2,9 @@ $(document).ready(function () {
   addAudio('einstein', './audio/EOTB.webm');
   playAudio('einstein');
 
-  showLine('You\'ve done a terrible thing you can\'t remember.', 50, undefined, true);
+  showLine('You\'ve done a terrible thing you can\'t remember.', 50, true, false, 1500);
   showLine('Something just terribly awful.', 50);
-  showLine('You should be ashamed.', 50, 1500);
+  showLine('You should be ashamed.', 50, false, false, 1500);
   showLine('You should be locked up.', 100);
   nextScreenLoader(loadOpening, 1000);
 });
