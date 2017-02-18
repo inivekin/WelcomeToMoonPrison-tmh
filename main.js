@@ -3,8 +3,9 @@ var stringArray = [];
 var curLine = [];
 var screenBreakCheck = false;                          // evil globals to be removed
 
+
 /*
-screenPause parameter: time to pause before fadeTime - default 1500
+screenPause parameter: time to pause before fadeTime - default 500
 element: state specific classes or elements to remove in an array - must incule tage (i.e. '.msg' or '#bigOldTitle') - default .msg and .pbreaks
 fadeTime: time for elements to fade out
 
@@ -12,47 +13,44 @@ screenPause tends to be equal or sometimes greater than fadeTime slightly
 */
 function clearScreen (screenPause, element, fadeTime) {
   console.log('clearing screen');
-  screenPause = (screenPause === undefined ? 1000 : screenPause);
-  fadeTime = (fadeTime === undefined ? 300 : fadeTime);
+  screenPause = (screenPause === undefined ? 500 : screenPause);
+  fadeTime = (fadeTime === undefined ? 500 : fadeTime);
   element = (element === undefined ? ['.msg', '.pbreaks'] : element);
-  setTimeout(function () {
     for (var i = 0; i < element.length; i++) {
       $(element[i]).fadeOut(fadeTime);
     }
-  }, screenPause);
   setTimeout(function () {
     for (var i = 0; i < element.length; i++) {
       $(element[i]).remove();
     }
-  }, fadeTime + screenPause + 100);
+  }, fadeTime + screenPause);
 }
 
 var showText = function (targetChild, targetParent, message, index, interval, count) {       // incremental reveal of each character
-  console.log(message);
-  console.log(message.length);
   if (index < message.length) {
-    console.log(message[index]);
     $(targetChild + count).append(message[index++]);
-    console.log(targetChild);
     $(document).bind('mousedown.screenSkip', function () {
       interval = 10;
-      //index = message.length + 1;
+      index = message.length + 1;
       if(!screenBreakCheck) {
-        screenBreak(targetChild, targetParent, count);
+        screenBreak(targetChild, targetParent, count, index);
         screenBreakCheck = true;
     }
 
       $(document).unbind('mousedown.screenSkip');
     });
+    if (index >= message.length) {
+      $(document).unbind('mousedown.screenSkip');
+    }
     setTimeout(function () { showText(targetChild, targetParent, message, index, interval, count); }, interval);
   }
 };
 
-var screenBreak = function (targetChild, targetParent, count) {
-  for (var i = count + 1; i < stringArray.length; i++) {
+var screenBreak = function (targetChild, targetParent, count, index) {
+  for (var i = 0; i < stringArray.length; i++) {
     clearTimeout(curLine[i]);
-    $(targetChild + i).html('');
-    showText(targetChild, targetParent, stringArray[i], 0, 10, i);            // TODO maybe give a small incrementing delay instead of them all starting at once (low priority)?
+    $(targetChild + (i)).html('');
+    showText(targetChild, targetParent, stringArray[i], 0, 10, i);
 
     }
     check = true;
@@ -62,16 +60,18 @@ var screenBreak = function (targetChild, targetParent, count) {
 /*
 stringLine is the message, write as a string.
 interval is the rate each letter appears in ms
-extra pauses after a line for extra effect(default:500ms)
+extra pauses after a line for extra effect(default:250ms)
 check must be 1 if the line is the last before a refresh (resets data like this.totalDelay).
 */
-
-var showLine = function (stringLine, interval, extra, check) {
-  if (!(check === undefined)) {
+var showLine = function (stringLine, interval, check, skip, extra) {
+  if (check) {
     this.count = 0;
     stringArray = [];
     curLine = [];
     screenBreakCheck = false;
+    this.totalDelay = 0;
+  }
+  if (skip) {
     this.totalDelay = 0;
   }
 
@@ -90,64 +90,133 @@ var showLine = function (stringLine, interval, extra, check) {
   this.oldInterval = interval;
   this.totalDelay = this.totalDelay + (stringArray[count].length * this.oldInterval) + (extra === undefined ? 500 : extra);
   this.count = count + 1;
-
-  console.log(stringArray[count]);
 };
 
-function answerOptions (options) {
-  var answerDiv = document.createElement('div');
-  answerDiv.setAttribute('id', 'answerDiv');
-  answerDiv.setAttribute('class', 'anyText');
-  $('body').append(answerDiv);
+/*
+conditionArray: is an array of conditions to pass for the corresponding arrays to be run
+fadeTargetArray: a 2 dimensional array, one row for each condition, affects only ansOp elements for now but can be eaily changed if needed
+messageArray: 1 diimensional array, will print a message for each corresponding condition. If message is 'finish', will run optional function (callToFunction)
+*/
+function switchOnClick(conditionArray, fadeTargetArray, messageArray, callToFunction) {
+    for (var i = 0; i < conditionArray.length; i++) {
+      console.log('conditionArray[i]: ' + conditionArray[i]);
+      if(conditionArray[i]) {
+      for (var j = 0; j < fadeTargetArray.length; j++) {
+        console.log('fadeTargetArray[i][j]' + fadeTargetArray[i][j]);
+        $('#ansOp' + j).fadeTo(100, fadeTargetArray[i][j]);
+        }
+        if(!(messageArray[i] === undefined)) {
+          if (messageArray[i] === 'finish') {
+             callToFunction();
+          } else {
+              showLine(messageArray[i], 25, 0, 1);
+             if(($('#txtDiv p').length > 4)) {
+               $('#msg' + ($('#txtDiv p').length - 4)).fadeOut(100);
+               $('#txtDiv').find('br:first').fadeOut(100);
+             }
+          }
+      }
+    }
+    }
+  }
+
+function answerActive(answer, option) {
+  $(answer).html('_' + option);
+}
+
+function answerInactive(answer, option) {
+  $(answer).html(option);
+}
+
+function answerSelecting(answer, option, altOption) {
+  if (altOption === '' || undefined) {
+    $(answer).css('color', '#BF4494');
+    $(answer).css('text-shadow', '3px, 3px, 0px, white');                   // TODO add some feedback like a dimming effect on pressdown
+  } else {
+    $(answer).html(altOption);
+  }
+}
+
+function answerSelected(answer, option) {
+  $(answer).css('color', 'white');
+  $(answer).css('text-shadow', '3px, 3px, 0px, #BF4494');                   // TODO add some feedback like a dimming effect on pressdown
+  $(answer).html(option);
+}
+
+function answerActivation (answers, options, altOptions) {
+  for (var i = 0; i < answers.length; i++) {
+  (function (i) {
+      $(answers[i]).on('mouseover', function () {
+        answerActive(answers[i], options[i]);
+      });
+      $(answers[i]).on('mouseleave', function () {
+        answerInactive(answers[i], options[i]);
+      });
+      $(answers[i]).on('mousedown', function () {
+        answerSelecting(answers[i], options[i], altOptions[i]);
+      });
+      $(answers[i]).on('mouseup', function () {
+        answerSelected(answers[i], options[i]);
+      });
+    })(i);
+}
+}
+
+function answerOptions (options, altOptions) {
   var answers = [], ansDel;
   for (var i = 0; i < stringArray.length; i++) {
     ansDel = stringArray[i].length * 50;
   }
-  setTimeout( function () {
+  setTimeout(function () {
   for (var i = 0; i < options.length; i++) {
     answers[i] = document.createElement('p');
-    answers[i].setAttribute('id', 'answerOp' + i);
-    $('#answerDiv').append(answers[i]);
-    console.log(options);
-    console.log(options[i]);
-      showText('#answerOp', '#answerDiv', options[i], 0, 50, i);
+    answers[i].setAttribute('id', 'ansOp' + i);
+    answers[i].setAttribute('class', 'selectable');
+    $('#ansDiv').append(answers[i]);
+    showText('#ansOp', '#ansDiv', options[i], 0, 50, i);
     }
+    answerActivation(answers, options, altOptions);
     }, ansDel);
   }
 
 
-var addAudio = function ( id, location) {
+var addAudio = function (id, location) {
   var audio = document.createElement('audio');
   $('body').append(audio);
   $(audio).attr('id', id).attr('src', location);
 };
 
+var stopAudio = function (id, fade) {
+  $('#' + id).get(0).pause();
+  if(!(fade === undefined)) {
+    // code here if needed
+  }
+}
 
-//id for added element, TODO duration optional-not yet implemented
+
 var playAudio = function (id, duration) {
   $('#' + id).get(0).play();
-  if(!duration == undefined) {
-    // code here eventually
+  if(!(duration === undefined)) {
   }
 };
 
 function nextScreenLoader(functionToRun, screenPause) {
   var nextScreenLoader = setTimeout(function () {
     $(document).unbind('mousedown.screenBreak');
-    nextScreenLoader.noBreakCheck = true;
-    clearScreen(300, ['.msg', '.pBreaks'], 300);
+    //nextScreenLoader.noBreakCheck = true;
+    clearScreen(500, ['.msg', '.pBreaks'], 500);
     setTimeout(function () { functionToRun(); }, screenPause);
-    }, this.totalDelay + screenPause);
+    }, this.totalDelay);
 
   $(document).bind('mousedown.screenBreak', function () {
     $(document).unbind('mousedown.screenBreak');
       if (!nextScreenLoader.noBreakCheck) {
       clearTimeout(nextScreenLoader);
-      clearScreen(screenPause - 300, ['.msg', '.pBreaks'], 300);
+      clearScreen(500, ['.msg', '.pBreaks'], 500);
       setTimeout(function () { functionToRun(); }, screenPause);
       }
   });
-};
+}
 
 function loadScene(sceneScriptFile) {
       setTimeout(function () {

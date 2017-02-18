@@ -34,7 +34,10 @@ body {
   z-index: 1;
 }
 
-#answerDiv {
+#ansDiv {
+  font-family: Gaiatype;
+  color: white;
+  text-shadow: 3px 3px 0px #BF4494;
   position: fixed;
   font-size: 42px;
   bottom: 0;
