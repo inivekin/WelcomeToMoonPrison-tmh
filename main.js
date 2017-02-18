@@ -3,21 +3,6 @@ var stringArray = [];
 var curLine = [];
 var screenBreakCheck = false;                          // evil globals to be removed
 
-function fadeloop (star, timeOut, timeIn, loop, count) {
-    var $star = $(star),
-        fn = function () {
-      $star.fadeTo(timeOut, Math.random()).delay(Math.random() * 100).fadeTo(timeIn, Math.random());
-    };
-    fn();
-    if (loop) {
-      this.counter = (this.counter === undefined ? 0 : this.counter + 1);
-      intId[this.counter] = setInterval(fn, timeOut + timeIn + 100);
-      // TODO sometimes stars do not fade right because setInterval lasts too long for fade zone before clearInterval can stop it.
-      // fix by making interval shorter, preferably around 500-1000, though need to make sure fadeTos fade to close decimal so flickering isn't too much
-    }
-}
-
-
 /*
 screenPause parameter: time to pause before fadeTime - default 1500
 element: state specific classes or elements to remove in an array - must incule tage (i.e. '.msg' or '#bigOldTitle') - default .msg and .pbreaks
@@ -40,72 +25,6 @@ function clearScreen (screenPause, element, fadeTime) {
       $(element[i]).remove();
     }
   }, fadeTime + screenPause + 100);
-}
-
-
-function randomStars (i) {
-                                                                          // TODO randomize font-size instead
-    var divsize = ((Math.random() * 16) + 16).toFixed();
-    $newdiv = $('<div/>').attr('id', 'star' + i).css({
-        'font-size'   : divsize + 'px'
-    });
-                                                                          // makes position sensitive to size and document's width
-    var posx = (Math.random() * ($(document).width() - divsize)).toFixed();   // FIXME try to keep star locations away from title (low priority)
-    var posy = (Math.random() * ($(document).height() - divsize)).toFixed();  // FIXME on window resize stars remain oddly positioned (low priority)
-
-    $newdiv.css({
-        'font-family' : 'Gaiatype',
-        'color'       : 'white',
-        'text-shadow' : '3px 3px 0px #BF4494',
-        'position'    : 'absolute',
-        'left'        : posx + 'px',
-        'top'         : posy + 'px',
-        'display'     : 'none'
-    }).html('*').appendTo('body');
-}
-
-function loadOpening () {
-  // creating title elements
-  var titlePage = document.createElement('h1');
-  $(titlePage).attr('class', 'anyText').attr('id', 'bigOldTitle'); // .css('opacity', '0.0');
-  titlePage.innerHTML = 'MOON PRISON';
-  $('body').append(titlePage);
-  var instruct = document.createElement('h3');
-  $(instruct).attr('class', 'anyText').attr('id', 'instructor'); // .css('opacity', '0.0');
-  instruct.innerHTML = '[click to play]';
-  $('#bigOldTitle').append(instruct);
-  $('#bigOldTitle').fadeIn(500, function () { $('#instructor').fadeIn(800); });
-
-
-  // generate and loop stars
-  var starNum = 31;
-  for (var i = 0; i < starNum; i++) {                                           // TODO make star number dependent on window size
-    randomStars(i);
-    fadeloop ('#star' + i, 1500, 1200, true, starNum);
-  }
-  // event listener to continue into game
-  $(document).on('mousedown', function () {
-    clearScreen(300, ['#bigOldTitle'], 300);
-    var starArray = [];
-    for (var i = 0; i < starNum; i++) {
-      clearInterval(intId[i]);
-      starArray[i] = '#star' + i;
-    }
-    setTimeout(function () {
-      clearScreen(600, starArray, 600);
-    }, 200);
-    $(document).unbind('mousedown');
-
-    setTimeout(function () {
-      $.getScript('/scenes/scene1.js')
-        .done(function () {
-          console.log('Next js script loaded successfully');
-        })
-        .fail(function () {
-          console.log('Couldn\'t load next js file for some reason');
-        });
-    }, 500);
-  });
 }
 
 var showText = function (targetChild, targetParent, message, index, interval, count) {       // incremental reveal of each character
@@ -230,17 +149,20 @@ function nextScreenLoader(functionToRun, screenPause) {
   });
 };
 
-
-function gameIntro () {
-  addAudio('einstein', './audio/EOTB.webm');
-  playAudio('einstein');
-
-  showLine('You\'ve done a terrible thing you can\'t remember.', 50, undefined, true);
-  showLine('Something just terribly awful.', 50);
-  showLine('You should be ashamed.', 50, 1500);
-  showLine('You should be locked up.', 100);
-  nextScreenLoader(loadOpening, 1000);
-
+function loadScene(sceneScriptFile) {
+      setTimeout(function () {
+      $.getScript(sceneScriptFile)
+        .done(function () {
+          console.log('Loaded ' + sceneScriptFile + ' successfully');
+        })
+        .fail(function () {
+          console.log('Couldn\'t load ' + sceneScriptFile + ' for some reason');
+        });
+    }, 500);
 }
 
-window.onload = gameIntro;
+function gameStart() {
+  loadScene('/scenes/opening.js');
+}
+
+window.onload = gameStart;
