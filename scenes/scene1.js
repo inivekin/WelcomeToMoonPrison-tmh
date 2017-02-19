@@ -47,10 +47,11 @@ function scene1starter () {
 
 $(document).ready(function () {
   setTimeout(function () {
+      blankSpace(1);
     showLine('Welcome to Moon Prison.', 50, 1);
     showLine('This is your cell.', 50);
     showLine('A perfect glass room and a sun that never sets.', 50);
     showLine('Amazing.', 100);
+    nextScreenLoader(scene1starter, 300);
   }, 200);
-  nextScreenLoader(scene1starter, 300);
 });

@@ -15,33 +15,35 @@ body {
 .msg{
   font-family: Gaiatype;
   color: white;
-  text-shadow: 3px 3px 0px #BF4494;
+  text-shadow: 4px 4px 4px #BF16B6;
   font-size: 36px;
   text-align: left;
+  padding-left: 5vh;
   word-wrap: break-word;
 }
 
 .anyText {
   font-family: Gaiatype;
   color: white;
-  text-shadow: 3px 3px 0px #BF4494;
+  text-shadow: 4px 4px 4px #BF16B6;
 }
 
 #bigOldTitle {
-  font-size: 56px;
+  font-size: 102px;
   text-align: center;
   padding-top: 40vh;
   z-index: 1;
+  letter-spacing: 15px;
 }
 
 #ansDiv {
   font-family: Gaiatype;
   color: white;
-  text-shadow: 3px 3px 0px #BF4494;
+  text-shadow: 4px 4px 4px #BF16B6;
   position: fixed;
   font-size: 42px;
   bottom: 0;
-  left: 50vh;
+  left: 80vh;
   text-align: left;
 }
 

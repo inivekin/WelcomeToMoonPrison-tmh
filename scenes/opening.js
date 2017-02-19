@@ -2,10 +2,11 @@ $(document).ready(function () {
   addAudio('einstein', './audio/EOTB.webm');
   playAudio('einstein');
 
-  showLine('You\'ve done a terrible thing you can\'t remember.', 50, true, false, 1500);
-  showLine('Something just terribly awful.', 50);
-  showLine('You should be ashamed.', 50, false, false, 1500);
-  showLine('You should be locked up.', 100);
+  blankSpace(3);
+  showLine('\xa0\xa0\xa0\xa0\xa0\xa0' + 'YOU\'VE DONE A TERRIBLE THING YOU CAN\'T REMEMBER.', 50, true, false, 750);  // TODO I was lazy, if line breaks it continues before indention of \xa0. fix later
+  showLine('\xa0\xa0\xa0\xa0\xa0\xa0' + 'SOMETHING JUST TERRIBLY AWFUL.', 50);
+  showLine('\xa0\xa0\xa0\xa0\xa0\xa0' + 'YOU SHOULD BE ASHAMED.', 50, false, false, 1500);
+  showLine('\xa0\xa0\xa0\xa0\xa0\xa0' + 'YOU SHOULD BE LOCKED UP.', 100);
   nextScreenLoader(loadOpening, 1000);
 });
 
@@ -26,7 +27,7 @@ function loadOpening () {
   var starNum = $(window).width() * $(window).height() * 5.0e-5;
   for (var i = 0; i < starNum; i++) {
     randomStars(i);
-    fadeloop ('#star' + i, 1500, 1200, true, starNum);
+    fadeloop ('#star' + i, 1400, 1000, true, starNum);
   }
   // event listener to continue into game
   $(document).on('mousedown', function () {
@@ -37,11 +38,12 @@ function loadOpening () {
       starArray[i] = '#star' + i;
     }
     setTimeout(function () {
-      clearScreen(600, starArray, 600);
-    }, 200);
+      clearScreen(300, starArray, 2800);
+  }, 100);
     $(document).unbind('mousedown');
-
-    loadScene('/scenes/scene1.js');
+    setTimeout(function() {
+        loadScene('/scenes/scene1.js');
+    }, 2800);
   });
 }
 
@@ -51,8 +53,8 @@ function randomStars (i) {
     $newdiv = $('<div/>').attr('id', 'star' + i).css({
         'font-size'   : divSize + 'px'
     });
-    var viewportWidth = $(window).width()
-    var viewportHeight = $(window).height()
+    var viewportWidth = $(window).width();
+    var viewportHeight = $(window).height();
     // FIXME try to keep star locations away from title (low priority)
     var posX = ((Math.random() * (viewportWidth - divSize)) * 100  / viewportWidth).toFixed();
     var posY = ((Math.random() * (viewportHeight - divSize)) * 100 / viewportHeight).toFixed();
