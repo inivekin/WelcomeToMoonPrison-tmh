@@ -26,7 +26,13 @@ function clearScreen (screenPause, element, fadeTime) {
   }, fadeTime + screenPause);
 }
 
-var showText = function (targetChild, targetParent, message, index, interval, count) {       // incremental reveal of each character
+function blankSpace (number) {
+    for (var i = 0; i < number; i++) {
+        showLine('', 0);
+    }
+}
+
+var showText = function (targetChild, targetParent, message, index, interval, count) {       // incremental reveal of each character (should rarely be called in place of showLine)
   if (index < message.length) {
     $(targetChild + count).append(message[index++]);
     $(document).bind('mousedown.screenSkip', function () {
@@ -51,7 +57,6 @@ var screenBreak = function (targetChild, targetParent, count, index) {
     clearTimeout(curLine[i]);
     $(targetChild + (i)).html('');
     showText(targetChild, targetParent, stringArray[i], 0, 10, i);
-
     }
     check = true;
 };
@@ -74,7 +79,7 @@ var showLine = function (stringLine, interval, check, skip, extra) {
   if (skip) {
     this.totalDelay = 0;
   }
-
+  console.log(stringLine);
   var count = (this.count === undefined ? count : this.count);
   var newPara = document.createElement('p');
   newPara.setAttribute('id', 'msg' + count);
@@ -109,10 +114,10 @@ function switchOnClick(conditionArray, fadeTargetArray, messageArray, callToFunc
           if (messageArray[i] === 'finish') {
              callToFunction();
           } else {
-              showLine(messageArray[i], 25, 0, 1);
+              showLine('...' + messageArray[i], 25, 0, 1);
              if(($('#txtDiv p').length > 4)) {
                $('#msg' + ($('#txtDiv p').length - 4)).fadeOut(100);
-               $('#txtDiv').find('br:first').fadeOut(100);
+               $('#txtDiv').find('br').remove();
              }
           }
       }
@@ -130,17 +135,17 @@ function answerInactive(answer, option) {
 
 function answerSelecting(answer, option, altOption) {
   if (altOption === '' || undefined) {
-    $(answer).css('color', '#BF4494');
-    $(answer).css('text-shadow', '3px, 3px, 0px, white');                   // TODO add some feedback like a dimming effect on pressdown
+    // code here eventually                              // TODO add some feedback like a dimming effect on pressdown
   } else {
     $(answer).html(altOption);
   }
 }
 
 function answerSelected(answer, option) {
-  $(answer).css('color', 'white');
-  $(answer).css('text-shadow', '3px, 3px, 0px, #BF4494');                   // TODO add some feedback like a dimming effect on pressdown
-  $(answer).html(option);
+  setTimeout(function () {
+      // code here eventually                             // TODO add some feedback like a dimming effect on pressdown
+      $(answer).html(option);
+  }, 500);
 }
 
 function answerActivation (answers, options, altOptions) {
@@ -150,13 +155,13 @@ function answerActivation (answers, options, altOptions) {
         answerActive(answers[i], options[i]);
       });
       $(answers[i]).on('mouseleave', function () {
-        answerInactive(answers[i], options[i]);
+        answerInactive(answers[i], '\xa0' + options[i]);
       });
       $(answers[i]).on('mousedown', function () {
-        answerSelecting(answers[i], options[i], altOptions[i]);
+        answerSelecting(answers[i], '\xa0' + options[i], altOptions[i]);
       });
       $(answers[i]).on('mouseup', function () {
-        answerSelected(answers[i], options[i]);
+        answerSelected(answers[i], '\xa0' + options[i]);
       });
     })(i);
 }
@@ -173,7 +178,7 @@ function answerOptions (options, altOptions) {
     answers[i].setAttribute('id', 'ansOp' + i);
     answers[i].setAttribute('class', 'selectable');
     $('#ansDiv').append(answers[i]);
-    showText('#ansOp', '#ansDiv', options[i], 0, 50, i);
+    showText('#ansOp', '#ansDiv', '\xa0' + options[i], 0, 50, i);
     }
     answerActivation(answers, options, altOptions);
     }, ansDel);
@@ -203,17 +208,17 @@ var playAudio = function (id, duration) {
 function nextScreenLoader(functionToRun, screenPause) {
   var nextScreenLoader = setTimeout(function () {
     $(document).unbind('mousedown.screenBreak');
-    //nextScreenLoader.noBreakCheck = true;
-    clearScreen(500, ['.msg', '.pBreaks'], 500);
-    setTimeout(function () { functionToRun(); }, screenPause);
+    nextScreenLoader.noBreakCheck = true;
+    clearScreen(100, ['.msg', '.pBreaks'], screenPause);
+    setTimeout(function () { functionToRun(); }, screenPause + 100);
     }, this.totalDelay);
 
   $(document).bind('mousedown.screenBreak', function () {
     $(document).unbind('mousedown.screenBreak');
       if (!nextScreenLoader.noBreakCheck) {
       clearTimeout(nextScreenLoader);
-      clearScreen(500, ['.msg', '.pBreaks'], 500);
-      setTimeout(function () { functionToRun(); }, screenPause);
+      clearScreen(100, ['.msg', '.pBreaks'], screenPause);
+      setTimeout(function () { functionToRun(); }, screenPause + 100);
       }
   });
 }
