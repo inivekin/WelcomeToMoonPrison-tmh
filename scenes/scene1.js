@@ -23,7 +23,7 @@ function scene1starter () {
     showLine('What will you do?', 50, true);
 
     // FIXME bug where options do not print properly if hovered over too sone. Maybe just have them appear quicker? (low priority as hovering again fixes them)
-    answerOptions(['SIT', 'STAND', 'THINK\xa0ABOUT\xa0WHAT\xa0YOU\'VE\xa0DONE\n'], ['WHY', 'WHY', 'OH GOD WHY']);  // optional mousedown submessage - can remove
+    answerOptions(['SIT', 'STAND', 'THINK\xa0ABOUT\xa0WHAT\xa0YOU\'VE\xa0DONE\n'], ['WHY', 'WHY', 'OH GOD WHY']);  // FIXME Unsure why the first array started having trouble displaying spaces and such?
 
     // TODO I will clean this up I swear. It just hurts for me to look at for too long of a period
     $('#ansDiv').on('mousedown', '#ansOp0', function () {

@@ -52,8 +52,7 @@ h3 {
   font-size: 42px;
   position: fixed;
   bottom: 0;
-  right: 0;
-  left: 60vh;
+  margin-left: 60vh;
   text-align: left;
 }
 
@@ -73,7 +72,6 @@ h3 {
 .selectable {
     margin-top: 5vh;
     display: inline-block;
-    width: 100%;
 }
 
 .responses {

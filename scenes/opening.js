@@ -2,7 +2,6 @@ $(document).ready(function () {
   addAudio('einstein', './audio/EOTB.webm');
   playAudio('einstein');
 
-  blankSpace(3);
   showLine('YOU\'VE DONE A TERRIBLE THING YOU CAN\'T REMEMBER.', 50, true, false, 750, 'openingText openingText1stLine');
   showLine('SOMETHING JUST TERRIBLY AWFUL.', 50, 0, 0, undefined, 'openingText');
   showLine('YOU SHOULD BE ASHAMED.', 50, false, false, 1500, 'openingText');
