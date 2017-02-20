@@ -3,6 +3,14 @@ body {
   margin: 0px;
 }
 
+span {
+    display:inline-block;
+}
+
+h3 {
+  font-size: 28px;
+}
+
 @font-face {
   font-family: 'Gaiatype';
   src: url('./font/Gaiatype.eot');
@@ -20,6 +28,7 @@ body {
   text-align: left;
   padding-left: 5vh;
   word-wrap: break-word;
+  margin-top: 10vh;
 }
 
 .anyText {
@@ -40,13 +49,33 @@ body {
   font-family: Gaiatype;
   color: white;
   text-shadow: 4px 4px 4px #BF16B6;
-  position: fixed;
   font-size: 42px;
+  position: fixed;
   bottom: 0;
-  left: 80vh;
+  right: 0;
+  left: 60vh;
   text-align: left;
 }
 
-h3 {
-  font-size: 28px;
+.openingText {
+    margin-left: 15%;
+}
+
+.openingText1stLine {
+    margin-top: 20vh;
+}
+
+.afterMessageInstruct {
+    font-size: 58px;
+    margin-left: 30vh;
+}
+
+.selectable {
+    margin-top: 5vh;
+    display: inline-block;
+    width: 100%;
+}
+
+.responses {
+    margin-left: 20vh;
 }

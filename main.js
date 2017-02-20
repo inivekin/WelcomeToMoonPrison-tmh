@@ -1,5 +1,6 @@
 var intId = [];
 var stringArray = [];
+var newClassArray = [];
 var curLine = [];
 var screenBreakCheck = false;                          // evil globals to be removed
 
@@ -16,9 +17,11 @@ function clearScreen (screenPause, element, fadeTime) {
   screenPause = (screenPause === undefined ? 500 : screenPause);
   fadeTime = (fadeTime === undefined ? 500 : fadeTime);
   element = (element === undefined ? ['.msg', '.pbreaks'] : element);
-    for (var i = 0; i < element.length; i++) {
-      $(element[i]).fadeOut(fadeTime);
-    }
+  setTimeout(function (){
+      for (var i = 0; i < element.length; i++) {
+        $(element[i]).fadeOut(fadeTime);
+      }
+  }, screenPause);
   setTimeout(function () {
     for (var i = 0; i < element.length; i++) {
       $(element[i]).remove();
@@ -35,40 +38,44 @@ function blankSpace (number) {
 var showText = function (targetChild, targetParent, message, index, interval, count) {       // incremental reveal of each character (should rarely be called in place of showLine)
   if (index < message.length) {
     $(targetChild + count).append(message[index++]);
-    $(document).bind('mousedown.screenSkip', function () {
-      interval = 10;
-      index = message.length + 1;
+    $(document).bind('click.screenSkip', function () {
+      interval = 5;
+      //index = message.length + 1;
       if(!screenBreakCheck) {
+          screenBreakCheck = true;
         screenBreak(targetChild, targetParent, count, index);
-        screenBreakCheck = true;
     }
 
-      $(document).unbind('mousedown.screenSkip');
+      $(document).unbind('click.screenSkip');
     });
     if (index >= message.length) {
-      $(document).unbind('mousedown.screenSkip');
+      $(document).unbind('click.screenSkip');
     }
     setTimeout(function () { showText(targetChild, targetParent, message, index, interval, count); }, interval);
   }
 };
 
 var screenBreak = function (targetChild, targetParent, count, index) {
-  for (var i = 0; i < stringArray.length; i++) {
-    clearTimeout(curLine[i]);
-    $(targetChild + (i)).html('');
-    showText(targetChild, targetParent, stringArray[i], 0, 10, i);
+    var loopNum = stringArray.length;
+    setTimeout(function () {
+  for (var i = count; i < loopNum - 1; i++) {
+      console.log(i);
+    clearTimeout(curLine[i + 1]);
+    $(targetChild + (i + 1)).html('');
+    showLine(stringArray[i + 1], 5, 0, 1, undefined, newClassArray[i + 1]);
     }
-    check = true;
+}, 50);
 };
 
 
 /*
 stringLine is the message, write as a string.
 interval is the rate each letter appears in ms
+skip will remove any delay, will not wait for previous lines to be displayed
 extra pauses after a line for extra effect(default:250ms)
 check must be 1 if the line is the last before a refresh (resets data like this.totalDelay).
 */
-var showLine = function (stringLine, interval, check, skip, extra) {
+var showLine = function (stringLine, interval, check, skip, extra, newClass) {
   if (check) {
     this.count = 0;
     stringArray = [];
@@ -84,13 +91,16 @@ var showLine = function (stringLine, interval, check, skip, extra) {
   var newPara = document.createElement('p');
   newPara.setAttribute('id', 'msg' + count);
   newPara.setAttribute('class', 'msg');
+  if(!(newClass === undefined)) {
+      newPara.className += ' ' + newClass;
+  }
   $('#txtDiv').append(newPara);
 
-  var lineBreak = document.createElement('br');
+  /*var lineBreak = document.createElement('br');
   lineBreak.setAttribute('class', 'pBreaks');
-  $('#txtDiv').append(lineBreak);
-
+  $('#txtDiv').append(lineBreak);*/                                     // replaced with margin-top  in css, might cause bugs?
   curLine[count] = setTimeout(function () { showText('#msg', '#txtDiv', stringLine, 0, interval, count); }, this.totalDelay);
+  newClassArray[count] = newClass;
   stringArray[count] = stringLine;
   this.oldInterval = interval;
   this.totalDelay = this.totalDelay + (stringArray[count].length * this.oldInterval) + (extra === undefined ? 500 : extra);
@@ -114,10 +124,10 @@ function switchOnClick(conditionArray, fadeTargetArray, messageArray, callToFunc
           if (messageArray[i] === 'finish') {
              callToFunction();
           } else {
-              showLine('...' + messageArray[i], 25, 0, 1);
+              showLine(messageArray[i], 25, 0, 1, undefined, 'responses');
              if(($('#txtDiv p').length > 4)) {
                $('#msg' + ($('#txtDiv p').length - 4)).fadeOut(100);
-               $('#txtDiv').find('br').remove();
+               //$('#txtDiv').find('br').remove();                              //since pBreaks removed
              }
           }
       }
@@ -125,43 +135,55 @@ function switchOnClick(conditionArray, fadeTargetArray, messageArray, callToFunc
     }
   }
 
+
 function answerActive(answer, option) {
-  $(answer).html('_' + option);
+    console.log('Hover registered');
+    if($(answer).css('opacity') > 0) {
+    $('<span>_</span>').insertBefore(answer);
+    }
+
 }
 
 function answerInactive(answer, option) {
-  $(answer).html(option);
+    $('span').remove();
 }
 
 function answerSelecting(answer, option, altOption) {
   if (altOption === '' || undefined) {
     // code here eventually                              // TODO add some feedback like a dimming effect on pressdown
   } else {
-    $(answer).html(altOption);
+    $(answer).html('\xa0' + altOption);
   }
 }
 
 function answerSelected(answer, option) {
   setTimeout(function () {
       // code here eventually                             // TODO add some feedback like a dimming effect on pressdown
+      $('span').remove();
       $(answer).html(option);
   }, 500);
 }
 
 function answerActivation (answers, options, altOptions) {
+    var underscoreBlink;
   for (var i = 0; i < answers.length; i++) {
   (function (i) {
       $(answers[i]).on('mouseover', function () {
         answerActive(answers[i], options[i]);
+        underscoreBlink = setInterval(function () {
+            $('span').fadeTo(200, 0.1).delay(100).fadeTo(200, 1);
+        }, 500);
       });
       $(answers[i]).on('mouseleave', function () {
-        answerInactive(answers[i], '\xa0' + options[i]);
+        answerInactive(answers[i], options[i]);
+        clearInterval(underscoreBlink);
       });
       $(answers[i]).on('mousedown', function () {
-        answerSelecting(answers[i], '\xa0' + options[i], altOptions[i]);
+        answerSelecting(answers[i], options[i], altOptions[i]);
       });
       $(answers[i]).on('mouseup', function () {
-        answerSelected(answers[i], '\xa0' + options[i]);
+        answerSelected(answers[i], options[i]);
+        clearInterval(underscoreBlink);
       });
     })(i);
 }
@@ -178,7 +200,12 @@ function answerOptions (options, altOptions) {
     answers[i].setAttribute('id', 'ansOp' + i);
     answers[i].setAttribute('class', 'selectable');
     $('#ansDiv').append(answers[i]);
-    showText('#ansOp', '#ansDiv', '\xa0' + options[i], 0, 50, i);
+
+    var lineBreak = document.createElement('br');
+    lineBreak.setAttribute('class', 'pBreaks');
+    $('#ansDiv').append(lineBreak);                               // removal of pBreaks makes this unecessary
+
+    showText('#ansOp', '#ansDiv', options[i], 0, 50, i);
     }
     answerActivation(answers, options, altOptions);
     }, ansDel);
@@ -217,8 +244,8 @@ function nextScreenLoader(functionToRun, screenPause) {
     $(document).unbind('mousedown.screenBreak');
       if (!nextScreenLoader.noBreakCheck) {
       clearTimeout(nextScreenLoader);
-      clearScreen(100, ['.msg', '.pBreaks'], screenPause);
-      setTimeout(function () { functionToRun(); }, screenPause + 100);
+      clearScreen(1000, ['.msg', '.pBreaks'], screenPause);
+      setTimeout(function () { functionToRun(); }, screenPause + 1000);
       }
   });
 }

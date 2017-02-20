@@ -3,11 +3,11 @@ $(document).ready(function () {
   playAudio('einstein');
 
   blankSpace(3);
-  showLine('\xa0\xa0\xa0\xa0\xa0\xa0' + 'YOU\'VE DONE A TERRIBLE THING YOU CAN\'T REMEMBER.', 50, true, false, 750);  // TODO I was lazy, if line breaks it continues before indention of \xa0. fix later
-  showLine('\xa0\xa0\xa0\xa0\xa0\xa0' + 'SOMETHING JUST TERRIBLY AWFUL.', 50);
-  showLine('\xa0\xa0\xa0\xa0\xa0\xa0' + 'YOU SHOULD BE ASHAMED.', 50, false, false, 1500);
-  showLine('\xa0\xa0\xa0\xa0\xa0\xa0' + 'YOU SHOULD BE LOCKED UP.', 100);
-  nextScreenLoader(loadOpening, 1000);
+  showLine('YOU\'VE DONE A TERRIBLE THING YOU CAN\'T REMEMBER.', 50, true, false, 750, 'openingText openingText1stLine');
+  showLine('SOMETHING JUST TERRIBLY AWFUL.', 50, 0, 0, undefined, 'openingText');
+  showLine('YOU SHOULD BE ASHAMED.', 50, false, false, 1500, 'openingText');
+  showLine('YOU SHOULD BE LOCKED UP.', 100, 0, 0, undefined, 'openingText');
+  nextScreenLoader(loadOpening, 1500);
 });
 
 function loadOpening () {
@@ -48,8 +48,7 @@ function loadOpening () {
 }
 
 function randomStars (i) {
-                                                                          // TODO randomize font-size instead
-    var divSize = ((Math.random() * 16) + 16).toFixed();
+    var divSize = ((Math.random() * 22) + 6).toFixed();
     $newdiv = $('<div/>').attr('id', 'star' + i).css({
         'font-size'   : divSize + 'px'
     });
@@ -73,7 +72,7 @@ function randomStars (i) {
 function fadeloop (star, timeOut, timeIn, loop, count) {
     var $star = $(star),
         fn = function () {
-      $star.fadeTo(timeOut, Math.random()).delay(Math.random() * 100).fadeTo(timeIn, Math.random());
+      $star.fadeTo(timeOut, Math.random() * 0.8).delay(Math.random() * 100).fadeTo(timeIn, Math.random() * 0.8);
     };
     fn();
     if (loop) {

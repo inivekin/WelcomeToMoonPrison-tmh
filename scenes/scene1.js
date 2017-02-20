@@ -7,6 +7,7 @@ function munchingTime() {
     showLine('Nothing is coming.', 50);
     showLine('Thinking of nothing', 50);
     showLine('Nothing but... munching...', 100);
+    showLine('Press [SPACEBAR] to munch', 50, 0, 0, 100, 'afterMessageInstruct');
   }, 400);
 }
 
@@ -22,7 +23,7 @@ function scene1starter () {
     showLine('What will you do?', 50, true);
 
     // FIXME bug where options do not print properly if hovered over too sone. Maybe just have them appear quicker? (low priority as hovering again fixes them)
-    answerOptions(['SIT', 'STAND', 'THINK ABOUT WHAT YOU\'VE DONE'], ['THINK YOU ARE SITTING', 'THINK YOU ARE STANDING', 'THINK YOU ARE THINKING']);  // optional mousedown submessage - can remove
+    answerOptions(['SIT', 'STAND', 'THINK\xa0ABOUT\xa0WHAT\xa0YOU\'VE\xa0DONE\n'], ['WHY', 'WHY', 'OH GOD WHY']);  // optional mousedown submessage - can remove
 
     // TODO I will clean this up I swear. It just hurts for me to look at for too long of a period
     $('#ansDiv').on('mousedown', '#ansOp0', function () {
@@ -40,7 +41,7 @@ function scene1starter () {
       console.log('clicked think');
     switchOnClick([($('#ansOp1').css('opacity') === '1' && $('#ansOp0').css('opacity') === '1') || ($('#ansOp1').css('opacity') === '0.5' && $('#ansOp0').css('opacity') === '1'),
                               $('#ansOp1').css('opacity') === '1' && $('#ansOp0').css('opacity') === '0',
-                              $('#ansOp1').css('opacity') === '0' && $('#ansOp0').css('opacity') === '1'], [[1, 0.5, 1],[1, 0, 0],[1, 0.5, 1]], ['Your knees are weak at the thought', 'finish', 'Your knees are weak at the thought'], munchingTime);
+                              $('#ansOp1').css('opacity') === '0' && $('#ansOp0').css('opacity') === '1'], [[1, 0.5, 1],[0, 0, 0],[1, 0.5, 1]], ['Your knees are weak at the thought', 'finish', 'Your knees are weak at the thought'], munchingTime);
                             });
 }
 
