@@ -1,4 +1,4 @@
-function munchingTime() {
+function munchingTime () {
   clearScreen(0, ['.selectable', '.msg', '.pBreaks'], 200);
   stopAudio('einstein');
   setTimeout(function () {
@@ -22,7 +22,6 @@ function hideOnClick (id, message) {
 function scene1starter () {
     showLine('What will you do?', 50, true);
 
-    // FIXME bug where options do not print properly if hovered over too sone. Maybe just have them appear quicker? (low priority as hovering again fixes them)
     answerOptions(['SIT', 'STAND', 'THINK\xa0ABOUT\xa0WHAT\xa0YOU\'VE\xa0DONE\n'], ['WHY', 'WHY', 'OH GOD WHY']);  // FIXME Unsure why the first array started having trouble displaying spaces and such?
 
     // TODO I will clean this up I swear. It just hurts for me to look at for too long of a period
@@ -48,7 +47,6 @@ function scene1starter () {
 
 $(document).ready(function () {
   setTimeout(function () {
-      blankSpace(1);
     showLine('Welcome to Moon Prison.', 50, 1);
     showLine('This is your cell.', 50);
     showLine('A perfect glass room and a sun that never sets.', 50);
