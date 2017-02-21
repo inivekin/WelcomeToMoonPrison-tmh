@@ -1,6 +1,6 @@
 function munchingTime () {
   clearScreen(0, ['.selectable', '.msg', '.pBreaks'], 200);
-  stopAudio('einstein');
+  stopAudio('shiryu8');
   setTimeout(function () {
     showLine('You think.', 50, 1);
     showLine('You think hard.', 50, 0, 0, 750);
@@ -22,7 +22,7 @@ function hideOnClick (id, message) {
 function scene1starter () {
     showLine('What will you do?', 50, true);
 
-    answerOptions(['SIT', 'STAND', 'THINK\xa0ABOUT\xa0WHAT\xa0YOU\'VE\xa0DONE\n'], ['WHY', 'WHY', 'OH GOD WHY']);  // FIXME Unsure why the first array started having trouble displaying spaces and such?
+    answerOptions(['SIT', 'STAND', 'THINK ABOUT WHAT YOU\'VE DONE'], ['WHY', 'WHY', 'OH GOD WHY']);  // FIXME Unsure why the first array started having trouble displaying spaces and such?
 
     // TODO I will clean this up I swear. It just hurts for me to look at for too long of a period
     $('#ansDiv').on('mousedown', '#ansOp0', function () {

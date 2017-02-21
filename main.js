@@ -26,20 +26,20 @@ function clearScreen (screenPause = 500, element = ['.msg'], fadeTime = 500) {
   }, fadeTime + screenPause);
 }
 
-var revealByLetter = function (stringWordArray, interval, i, stringLength, count, fadeLength) {
+var revealByLetter = function (targetChild, stringWordArray, interval, i, stringLength, count, fadeLength) {
   setTimeout(function () {
   for (var j = 0; j < stringWordArray[i].length; j++) {
-    $('#msg' + count + 'span' + i + 'letter' + j).delay(interval * j).fadeTo(fadeLength, 1);  // delays letter
+    $('#' + targetChild + count + 'span' + i + 'letter' + j).delay(interval * j).fadeTo(fadeLength, 1);  // delays letter
   }
 }, interval * stringLength);                                         // delays word
 };
 
-var revealByWord = function(stringWordArray, interval, stringLength, count, byWord = 0, fadeLength = 0) {
+var revealByWord = function(targetChild, stringWordArray, interval, stringLength, count, byWord = 0, fadeLength = 0) {
   for (var i = 0; i < stringWordArray.length; i++) {
     if (!byWord) {
-      revealByLetter(stringWordArray, interval, i, stringLength, count, fadeLength);  // to continue to letter reveal
+      revealByLetter(targetChild, stringWordArray, interval, i, stringLength, count, fadeLength);  // to continue to letter reveal
     } else {
-      $('#msg' + count + 'span' + i).children().delay(stringLength * interval).fadeTo(fadeLength, 1);
+      $('#' + targetChild + count + 'span' + i).children().delay(stringLength * interval).fadeTo(fadeLength, 1);
     }
       stringLength = stringWordArray[i].length + stringLength;
   }
@@ -68,11 +68,11 @@ var showTextByWord = function (targetChild, targetParent, message, index, interv
     showTextByWord(targetChild, targetParent, message, index, interval, count, fadeLength, byWord);
   } else {
     var stringLength = 0;
-      revealByWord(stringWordArray, interval, stringLength, count, fadeLength, byWord);
+      revealByWord(targetChild, stringWordArray, interval, stringLength, count, fadeLength, byWord);
   }
 };
 
-var showText = function (targetChild, targetParent, message, index, interval, count) {
+/*var showText = function (targetChild, targetParent, message, index, interval, count) {
   if (index < message.length) {
     $(targetChild + count).append(message[index++]);
     $(document).bind('click.screenSkip', function () {
@@ -102,7 +102,7 @@ var screenBreak = function (targetChild, targetParent, count, index) {
     showLine(stringArray[i + 1], 5, 0, 1, undefined, newClassArray[i + 1]);
     }
 }, 50);
-};                                                                              // now deprecated
+};    */                                                                          // now deprecated
 
 
 /*
@@ -173,30 +173,32 @@ function switchOnClick(conditionArray, fadeTargetArray, messageArray, callToFunc
 
 
 function answerActive(answer, option) {
-    console.log('Hover registered');
+    console.log(answer);
     if($(answer).css('opacity') > 0) {
-    $('<span class="selectable">_</span>').insertBefore(answer);
+    $('<span id="selector">_</span>').insertBefore($(answer).children(":first-child"));
     }
 }
 
 function answerInactive(answer, option) {
-    $('span.selectable').remove();
+    $('span#selector').remove();
 }
 
-function answerSelecting(answer, option, altOption) {
+function answerSelecting(answer, option, altOption, i) {
   if (altOption === '' || undefined) {
     // code here eventually                              // TODO add some feedback like a dimming effect on pressdown
   } else {
     $(answer).html('\xa0' + altOption);
+    setTimeout(function () {
+        // code here eventually                             // TODO add some feedback like a dimming effect on pressdown
+        $('span#selector').remove();
+        $(answer).html('');
+        showTextByWord('ansOp', '#ansDiv', option, 0, 50, i);          // TODO move to using showTextByWord function
+    }, 500);
   }
 }
 
-function answerSelected(answer, option) {
-  setTimeout(function () {
-      // code here eventually                             // TODO add some feedback like a dimming effect on pressdown
-      $('span.selectable').remove();
-      $(answer).html(option);
-  }, 500);
+function answerSelected(answer, option, i) {
+                                                                // Shouldn't be used
 }
 
 function answerActivation (answers, options, altOptions) {
@@ -206,7 +208,7 @@ function answerActivation (answers, options, altOptions) {
       $(answers[i]).on('mouseover', function () {
         answerActive(answers[i], options[i]);
         underscoreBlink = setInterval(function () {
-            $('span.selectable').fadeTo(200, 0.1).delay(100).fadeTo(200, 1);
+            $('#selector').fadeTo(200, 0.1).delay(100).fadeTo(200, 1);
         }, 500);
       });
       $(answers[i]).on('mouseleave', function () {
@@ -214,10 +216,10 @@ function answerActivation (answers, options, altOptions) {
         clearInterval(underscoreBlink);
       });
       $(answers[i]).on('mousedown', function () {
-        answerSelecting(answers[i], options[i], altOptions[i]);
+        answerSelecting(answers[i], options[i], altOptions[i], i);
       });
       $(answers[i]).on('mouseup', function () {
-        answerSelected(answers[i], options[i]);
+        answerSelected(answers[i], options[i], i);
         clearInterval(underscoreBlink);
       });
     })(i);
@@ -236,11 +238,11 @@ function answerOptions (options, altOptions) {
     answers[i].setAttribute('class', 'selectable');
     $('#ansDiv').append(answers[i]);
 
-    var lineBreak = document.createElement('br');
+    /*var lineBreak = document.createElement('br');
     lineBreak.setAttribute('class', 'pBreaks');
-    $('#ansDiv').append(lineBreak);                               // removal of pBreaks makes this unecessary
+    $('#ansDiv').append(lineBreak); */                              // removal of pBreaks makes this unecessary
 
-    showText('#ansOp', '#ansDiv', options[i], 0, 50, i);          // TODO move to using showTextByWord function
+    showTextByWord('ansOp', '#ansDiv', options[i], 0, 50, i);          // TODO move to using showTextByWord function
     }
     answerActivation(answers, options, altOptions);
     }, ansDel);

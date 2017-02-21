@@ -1,6 +1,6 @@
 $(document).ready(function () {
-  addAudio('einstein', './audio/EOTB.webm');
-  playAudio('einstein');
+  addAudio('shiryu8', './audio/Shiryu8.ogg');
+  playAudio('shiryu8');
 
 
   showLine('YOU\'VE DONE A TERRIBLE THING YOU CAN\'T REMEMBER.', 50, true, false, 750, 'openingText openingText1stLine');

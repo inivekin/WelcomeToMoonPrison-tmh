@@ -3,8 +3,9 @@ body {
   margin: 0px;
 }
 
-span {
+span.anyText {
     display:inline-block;
+    pointer-events: none;
 }
 
 h3 {
@@ -40,7 +41,7 @@ h3 {
 #bigOldTitle {
   font-size: 102px;
   text-align: center;
-  padding-top: 40vh;
+  padding-top: 30%;
   z-index: 1;
   letter-spacing: 15px;
 }
@@ -52,8 +53,7 @@ h3 {
   font-size: 42px;
   position: fixed;
   bottom: 0;
-  margin-left: 60vh;
-  text-align: left;
+  margin-left: 25%;
 }
 
 .openingText {
@@ -66,12 +66,12 @@ h3 {
 
 .afterMessageInstruct {
     font-size: 58px;
-    margin-left: 30vh;
+    margin-left: 25%vh;
 }
 
 .selectable {
-    margin-top: 5vh;
-    display: inline-block;
+    margin-top: 2vh;
+    display: block;
 }
 
 .responses {
