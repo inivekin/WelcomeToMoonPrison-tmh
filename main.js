@@ -12,11 +12,8 @@ fadeTime: time for elements to fade out
 
 screenPause tends to be equal or sometimes greater than fadeTime slightly
 */
-function clearScreen (screenPause, element, fadeTime) {
+function clearScreen (screenPause = 500, element = ['.msg'], fadeTime = 500) {
   console.log('clearing screen');
-  screenPause = (screenPause === undefined ? 500 : screenPause);
-  fadeTime = (fadeTime === undefined ? 500 : fadeTime);
-  element = (element === undefined ? ['.msg', '.pbreaks'] : element);
   setTimeout(function (){
       for (var i = 0; i < element.length; i++) {
         $(element[i]).fadeOut(fadeTime);
@@ -29,13 +26,53 @@ function clearScreen (screenPause, element, fadeTime) {
   }, fadeTime + screenPause);
 }
 
-function blankSpace (number) {
-    for (var i = 0; i < number; i++) {
-        showLine('', 0);
-    }
-}
+var revealByLetter = function (stringWordArray, interval, i, stringLength, count, fadeLength) {
+  setTimeout(function () {
+  for (var j = 0; j < stringWordArray[i].length; j++) {
+    $('#msg' + count + 'span' + i + 'letter' + j).delay(interval * j).fadeTo(fadeLength, 1);  // delays letter
+  }
+}, interval * stringLength);                                         // delays word
+};
 
-var showText = function (targetChild, targetParent, message, index, interval, count) {       // incremental reveal of each character (should rarely be called in place of showLine)
+var revealByWord = function(stringWordArray, interval, stringLength, count, byWord = 0, fadeLength = 0) {
+  for (var i = 0; i < stringWordArray.length; i++) {
+    if (!byWord) {
+      revealByLetter(stringWordArray, interval, i, stringLength, count, fadeLength);  // to continue to letter reveal
+    } else {
+      $('#msg' + count + 'span' + i).children().delay(stringLength * interval).fadeTo(fadeLength, 1);
+    }
+      stringLength = stringWordArray[i].length + stringLength;
+  }
+};
+
+var showTextByLetter = function (targetChild, count, word, wordSpan, index, letterIndex, interval, fadeLength, byWord) {
+  if (letterIndex < word.length) {
+    var letterSpan = document.createElement('span');
+    $(wordSpan).append(letterSpan);
+    $(letterSpan).attr('id', targetChild + count + 'span' + (index - 1) + 'letter' + letterIndex).attr('class', 'anyText').css('opacity', '0');
+    $(letterSpan).append(word[letterIndex++]);
+    showTextByLetter(targetChild, count, word, wordSpan, index, letterIndex, interval, fadeLength, byWord);
+  }
+};
+
+var showTextByWord = function (targetChild, targetParent, message, index, interval, count, fadeLength, byWord) {                        // TODO add screenSkip functionaility back in
+  var stringWordArray = message.split(' ');
+  if (index < stringWordArray.length) {
+    var wordSpan = document.createElement('span');
+    $('#' + targetChild + count).append(wordSpan);
+    $(wordSpan).attr('id', targetChild + count + 'span' + index).attr('class', 'anyText');
+    var letterIndex = 0;
+    showTextByLetter(targetChild, count, stringWordArray[index++], wordSpan, index, letterIndex, interval, fadeLength, byWord);
+
+    $(wordSpan).append('\xa0');
+    showTextByWord(targetChild, targetParent, message, index, interval, count, fadeLength, byWord);
+  } else {
+    var stringLength = 0;
+      revealByWord(stringWordArray, interval, stringLength, count, fadeLength, byWord);
+  }
+};
+
+var showText = function (targetChild, targetParent, message, index, interval, count) {
   if (index < message.length) {
     $(targetChild + count).append(message[index++]);
     $(document).bind('click.screenSkip', function () {
@@ -65,7 +102,7 @@ var screenBreak = function (targetChild, targetParent, count, index) {
     showLine(stringArray[i + 1], 5, 0, 1, undefined, newClassArray[i + 1]);
     }
 }, 50);
-};
+};                                                                              // now deprecated
 
 
 /*
@@ -75,7 +112,7 @@ skip will remove any delay, will not wait for previous lines to be displayed
 extra pauses after a line for extra effect(default:250ms)
 check must be 1 if the line is the last before a refresh (resets data like this.totalDelay).
 */
-var showLine = function (stringLine, interval, check, skip, extra, newClass) {
+var showLine = function (stringLine, interval, check, skip, extra, newClass, fadeLength, byWord) {
   if (check) {
     this.count = 0;
     stringArray = [];
@@ -86,8 +123,7 @@ var showLine = function (stringLine, interval, check, skip, extra, newClass) {
   if (skip) {
     this.totalDelay = 0;
   }
-  console.log(stringLine);
-  var count = (this.count === undefined ? count : this.count);
+  var count = this.count;
   var newPara = document.createElement('p');
   newPara.setAttribute('id', 'msg' + count);
   newPara.setAttribute('class', 'msg');
@@ -99,7 +135,7 @@ var showLine = function (stringLine, interval, check, skip, extra, newClass) {
   /*var lineBreak = document.createElement('br');
   lineBreak.setAttribute('class', 'pBreaks');
   $('#txtDiv').append(lineBreak);*/                                     // replaced with margin-top  in css, might cause bugs?
-  curLine[count] = setTimeout(function () { showText('#msg', '#txtDiv', stringLine, 0, interval, count); }, this.totalDelay);
+  curLine[count] = setTimeout(function () { showTextByWord('msg', '#txtDiv', stringLine, 0, interval, count, fadeLength, byWord); }, this.totalDelay);
   newClassArray[count] = newClass;
   stringArray[count] = stringLine;
   this.oldInterval = interval;
@@ -139,13 +175,12 @@ function switchOnClick(conditionArray, fadeTargetArray, messageArray, callToFunc
 function answerActive(answer, option) {
     console.log('Hover registered');
     if($(answer).css('opacity') > 0) {
-    $('<span>_</span>').insertBefore(answer);
+    $('<span class="selectable">_</span>').insertBefore(answer);
     }
-
 }
 
 function answerInactive(answer, option) {
-    $('span').remove();
+    $('span.selectable').remove();
 }
 
 function answerSelecting(answer, option, altOption) {
@@ -159,7 +194,7 @@ function answerSelecting(answer, option, altOption) {
 function answerSelected(answer, option) {
   setTimeout(function () {
       // code here eventually                             // TODO add some feedback like a dimming effect on pressdown
-      $('span').remove();
+      $('span.selectable').remove();
       $(answer).html(option);
   }, 500);
 }
@@ -171,7 +206,7 @@ function answerActivation (answers, options, altOptions) {
       $(answers[i]).on('mouseover', function () {
         answerActive(answers[i], options[i]);
         underscoreBlink = setInterval(function () {
-            $('span').fadeTo(200, 0.1).delay(100).fadeTo(200, 1);
+            $('span.selectable').fadeTo(200, 0.1).delay(100).fadeTo(200, 1);
         }, 500);
       });
       $(answers[i]).on('mouseleave', function () {
@@ -205,7 +240,7 @@ function answerOptions (options, altOptions) {
     lineBreak.setAttribute('class', 'pBreaks');
     $('#ansDiv').append(lineBreak);                               // removal of pBreaks makes this unecessary
 
-    showText('#ansOp', '#ansDiv', options[i], 0, 50, i);
+    showText('#ansOp', '#ansDiv', options[i], 0, 50, i);          // TODO move to using showTextByWord function
     }
     answerActivation(answers, options, altOptions);
     }, ansDel);
@@ -232,7 +267,7 @@ var playAudio = function (id, duration) {
   }
 };
 
-function nextScreenLoader(functionToRun, screenPause) {
+function nextScreenLoader (functionToRun, screenPause) {
   var nextScreenLoader = setTimeout(function () {
     $(document).unbind('mousedown.screenBreak');
     nextScreenLoader.noBreakCheck = true;
@@ -250,7 +285,7 @@ function nextScreenLoader(functionToRun, screenPause) {
   });
 }
 
-function loadScene(sceneScriptFile) {
+function loadScene (sceneScriptFile) {
       setTimeout(function () {
       $.getScript(sceneScriptFile)
         .done(function () {
@@ -262,7 +297,7 @@ function loadScene(sceneScriptFile) {
     }, 500);
 }
 
-function gameStart() {
+function gameStart () {
   loadScene('/scenes/opening.js');
 }
 
