@@ -41,7 +41,7 @@ h3 {
 #bigOldTitle {
   font-size: 102px;
   text-align: center;
-  padding-top: 30%;
+  padding-top: 25%;
   z-index: 1;
   letter-spacing: 15px;
 }
@@ -76,4 +76,18 @@ h3 {
 
 .responses {
     margin-left: 20vh;
+}
+
+#instructorLeft {
+  margin-left: 20%;
+  margin-top: 10%;
+  font-size: 24px;
+}
+
+#instructorRight {
+  font-size: 24px;
+}
+
+#animElem0 {
+  font-size: 24px;
 }

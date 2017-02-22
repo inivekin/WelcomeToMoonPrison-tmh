@@ -1,0 +1,11 @@
+{
+  "name" : "WelcomeToMoonPrison-tmh",
+  "description" : "Text-based web game",
+  "keywords" : ["game", "text-based"],
+  "dependencies" : {
+    "jquery": ">=3.1.1"
+  },
+  "repository": {"type": "git", "url": "git://github.com/inivekin/WelcomeToMoonPrison-tmh"},
+  "main" : "main.js",
+  "version" : "0.1"
+}
