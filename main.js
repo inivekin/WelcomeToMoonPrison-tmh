@@ -4,7 +4,6 @@ var newClassArray = [];
 var curLine = [];
 var screenBreakCheck = false;                          // evil globals to be removed
 
-
 /*
 screenPause parameter: time to pause before fadeTime - default 500
 element: state specific classes or elements to remove in an array - must incule tage (i.e. '.msg' or '#bigOldTitle') - default .msg and .pbreaks
@@ -148,7 +147,7 @@ conditionArray: is an array of conditions to pass for the corresponding arrays t
 fadeTargetArray: a 2 dimensional array, one row for each condition, affects only ansOp elements for now but can be eaily changed if needed
 messageArray: 1 diimensional array, will print a message for each corresponding condition. If message is 'finish', will run optional function (callToFunction)
 */
-function switchOnClick(conditionArray, fadeTargetArray, messageArray, callToFunction) {
+function switchOnClick (conditionArray, fadeTargetArray, messageArray, callToFunction) {
     for (var i = 0; i < conditionArray.length; i++) {
       console.log('conditionArray[i]: ' + conditionArray[i]);
       if(conditionArray[i]) {
@@ -175,7 +174,7 @@ function switchOnClick(conditionArray, fadeTargetArray, messageArray, callToFunc
 function answerActive(answer, option) {
     console.log(answer);
     if($(answer).css('opacity') > 0) {
-    $('<span id="selector">_</span>').insertBefore($(answer).children(":first-child"));
+    $('<span id="selector">_</span>').insertBefore($(answer).children(":first-child")); // FIXME for some reason a shitload of underscores a spawned if only the underscore if hovered over
     }
 }
 
@@ -192,13 +191,13 @@ function answerSelecting(answer, option, altOption, i) {
         // code here eventually                             // TODO add some feedback like a dimming effect on pressdown
         $('span#selector').remove();
         $(answer).html('');
-        showTextByWord('ansOp', '#ansDiv', option, 0, 50, i);          // TODO move to using showTextByWord function
+        showTextByWord('ansOp', '#ansDiv', option, 0, 50, i);
     }, 500);
   }
 }
 
 function answerSelected(answer, option, i) {
-                                                                // Shouldn't be used
+                                                                // Shouldn't be used as mouse region changes with submessages
 }
 
 function answerActivation (answers, options, altOptions) {
@@ -249,10 +248,11 @@ function answerOptions (options, altOptions) {
   }
 
 
-var addAudio = function (id, location) {
+var addAudio = function (id, location, startTime = 0) {
   var audio = document.createElement('audio');
   $('body').append(audio);
   $(audio).attr('id', id).attr('src', location);
+  audio.currentTime = startTime;
 };
 
 var stopAudio = function (id, fade) {
@@ -263,10 +263,9 @@ var stopAudio = function (id, fade) {
 }
 
 
-var playAudio = function (id, duration) {
+var playAudio = function (id) {
   $('#' + id).get(0).play();
-  if(!(duration === undefined)) {
-  }
+
 };
 
 function nextScreenLoader (functionToRun, screenPause) {

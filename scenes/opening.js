@@ -1,13 +1,15 @@
 $(document).ready(function () {
   addAudio('shiryu8', './audio/Shiryu8.ogg');
-  playAudio('shiryu8');
+  $('#shiryu8').on('canplay', function () {
+    playAudio('shiryu8');
 
 
-  showLine('YOU\'VE DONE A TERRIBLE THING YOU CAN\'T REMEMBER.', 50, true, false, 750, 'openingText openingText1stLine');
-  showLine('SOMETHING JUST TERRIBLY AWFUL.', 50, 0, 0, undefined, 'openingText');
-  showLine('YOU SHOULD BE ASHAMED.', 50, false, false, 1500, 'openingText');
-  showLine('YOU SHOULD BE LOCKED UP.', 100, 0, 0, undefined, 'openingText');
-  nextScreenLoader(loadOpening, 1500);
+    showLine('YOU\'VE DONE A TERRIBLE THING YOU CAN\'T REMEMBER.', 50, true, false, 750, 'openingText openingText1stLine');
+    showLine('SOMETHING JUST TERRIBLY AWFUL.', 50, 0, 0, undefined, 'openingText');
+    showLine('YOU SHOULD BE ASHAMED.', 50, false, false, 1500, 'openingText');
+    showLine('YOU SHOULD BE LOCKED UP.', 100, 0, 0, undefined, 'openingText');
+    nextScreenLoader(loadOpening, 1500);
+  });
 });
 
 function loadOpening () {
