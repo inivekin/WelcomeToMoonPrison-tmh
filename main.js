@@ -54,7 +54,7 @@ var showTextByLetter = function (targetChild, count, word, wordSpan, index, lett
   }
 };
 
-var showTextByWord = function (targetChild, targetParent, message, index, interval, count, fadeLength, byWord) {                        // TODO add screenSkip functionaility back in
+var showTextByWord = function (targetChild, targetParent, message, index, interval, count, fadeLength, byWord) {                        // TODO add screenSkip functionaility back in or maybe not
   var stringWordArray = message.split(' ');
   if (index < stringWordArray.length) {
     var wordSpan = document.createElement('span');
@@ -241,7 +241,7 @@ function answerOptions (options, altOptions) {
     lineBreak.setAttribute('class', 'pBreaks');
     $('#ansDiv').append(lineBreak); */                              // removal of pBreaks makes this unecessary
 
-    showTextByWord('ansOp', '#ansDiv', options[i], 0, 50, i);          // TODO move to using showTextByWord function
+    showTextByWord('ansOp', '#ansDiv', options[i], 0, 50, i);
     }
     answerActivation(answers, options, altOptions);
     }, ansDel);

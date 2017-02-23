@@ -1,4 +1,4 @@
-function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements) {
+function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements) {       // bug of undetermined cause makes bindings stop functioning after sometime
   $(document).one('mousedown', function (e) {
     $(document).bind('contextmenu', function (e) {
       e.preventDefault();
@@ -106,7 +106,7 @@ function startWalking () {
 function munchResult (result) {
   if (result) {
     clearScreen(300, ['.msg'], 600);
-    nextScreenLoader(startWalking, 0);
+    nextScreenLoader(startWalking, 300);
   } else {
     clearScreen(300, ['.msg'], 600);
     setTimeout(function () {
@@ -121,7 +121,7 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
 
       var audioTimer = setTimeout(function () {
         playAudio('starvingEffect');
-        restartAudio('starvingEffect');                                          // restart audio instead
+        restartAudio('starvingEffect');
       }, 2000);
 
       starveInterval[munchTotal] = setInterval(function () {
@@ -166,7 +166,7 @@ function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
         playAudio('munchEffect' + k);
       }
 
-      if (munchCounter > 4 && munchCounter % 2 === 0) {
+      if (munchCounter > 4 && munchCounter % 2 === 0) {                         // TODO just improve the implementation
         setTimeout(function () {
           playAudio('crunchEffect' + j);
         }, 500);
