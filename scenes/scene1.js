@@ -1,4 +1,4 @@
-function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements) {
+function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements) {       // bug of undetermined cause makes bindings stop functioning after sometime
   $(document).one('mousedown', function (e) {
     $(document).bind('contextmenu', function (e) {
       e.preventDefault();
@@ -13,7 +13,7 @@ function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClic
       $('#instructorLeft').fadeTo(clickInterval / 6, 0);
       setTimeout(function () {
         $('#instructorRight').fadeTo(clickInterval / 2, 1);
-      }, clickInterval / 2 + 200);
+      }, clickInterval / 2 + 350);
 
       console.log('left clicked');
       clearTimeout(rightClickTimer);
@@ -39,7 +39,7 @@ function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClic
           $('#instructorRight').fadeTo(clickInterval / 6, 0);
           setTimeout(function () {
             $('#instructorLeft').fadeTo(clickInterval / 2, 1);
-          }, clickInterval / 2 + 200);
+          }, clickInterval / 2 + 350);
 
           clearTimeout(leftClickTimer);
             console.log('right clicked');
@@ -67,7 +67,7 @@ function startWalking () {
     setTimeout(function () {
       var instructorLeft = document.createElement('span');
       $('#txtDiv').append(instructorLeft);
-      $(instructorLeft).attr('class', 'anyText').html('[left click] ').attr('id', 'instructorLeft').fadeIn(1000);
+      $(instructorLeft).attr('class', 'anyText').html('[left click] ').attr('id', 'instructorLeft').fadeIn(2000);
 
 
       var animElements = ['* - - - - - _ - - - - - *'],
@@ -90,7 +90,7 @@ function startWalking () {
 
       for (var j = 0; j < (animElements[0].length + 1) / 2; j++) {
         if (j === ((animElements[0].length + 3) / 4 - 1)) {
-          $('#animElem' + '0' + 'span' + j).fadeIn(1000);// .css('opacity', '1');
+          $('#animElem' + '0' + 'span' + j).fadeIn(2000);// .css('opacity', '1');
           console.log('SEVEN!!!!');
         } else {
           console.log('NOT SEVEN!!!!');
@@ -105,59 +105,94 @@ function startWalking () {
 
 function munchResult (result) {
   if (result) {
-    // you win
-    nextScreenLoader(1000, startWalking);
+    clearScreen(300, ['.msg'], 600);
+    nextScreenLoader(startWalking, 300);
   } else {
-    // you starve
-    startWalking(1000, startWalking);
+    clearScreen(300, ['.msg'], 600);
+    setTimeout(function () {
+      showLine('You have DIED of STARVATION', 100, 1);
+    }, 1300);
   }
 }
 
-function starveRelease (heldSounds, loopSounds, munchCounter, totalMunchingAudio, totalStarvingAudio) {
-  $(document).one('keyup', function (e) {
-    clearInterval(loopSounds);
-    clearTimeout(heldSounds);
+function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
+  var starveInterval = [],
+      starveCounter = 0;
 
-    var starveCounter = 0;
-    playAudio('starvingEffect' + Math.floor(Math.random() * totalStarvingAudio));
-    heldSounds = setTimeout(function () {                                       // setTimeout may not be required depending on if set interval pauses at first
-      loopSounds = setInterval(function () {
-        playAudio('starvingEffect' + Math.floor(Math.random() * totalMunchingAudio));
+      var audioTimer = setTimeout(function () {
+        playAudio('starvingEffect');
+        restartAudio('starvingEffect');
+      }, 2000);
+
+      starveInterval[munchTotal] = setInterval(function () {
+        console.log('interval: ' + munchTotal);
         starveCounter += 1;
-        if (starveCounter > 20) {                                               // depends on interval. Possible addition, increase volume or intensity near end for indication
-          munchResult(0);                                                       // escapes loop with starvation
+        starveTimer = setTimeout(function () {
+          munchCounter = 0;
+          clearTimeout(audioTimer);
+        }, 2000);
+        if (starveCounter > 38) {
+          clearTimeout(starveTimer);
+          for (var i = 0; i < munchTotal + 1; i++) {
+            clearInterval(starveInterval[i]);
+          }
+          stopAudio('starvingEffect');
+          munchResult(0);
         }
-      }, interval);
-    }, interval);
-    munchPress (heldSounds, loopSounds, munchCounter);
-  });
+    }, 1000);
+
+    $(document).one('keydown', function (e) {
+      for (var i = 0; i < munchTotal + 1; i++) {
+        clearInterval(starveInterval[i]);
+      }
+      stopAudio('starvingEffect');
+      clearTimeout(starveTimer);
+      munchPress (e, audioTimer, munchCounter, munchTotal, starveTimer, starveInterval);
+    });
 }
 
-function munchPress (heldSounds = 0, loopSounds = 0, munchCounter = 0) {
-  var totalMunchingAudio,
-      totalStarvingAudio;                                                       // insert when number of files known
-  $(document).one('keydown', function (e) {
-    if (e === 32) {
-      // may want to keep some files separate for only when space is held, if so, just lower totalMunchingAudio boundary here, heighten it in setInterval loop.
-      if (!(heldSounds === 0)) {
-        clearInterval(loopSounds);
-        clearTimeout(heldSounds);
+function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
+    if (e.which === 32) {
+      var stop = 0;
+      clearTimeout(audioTimer);
+      munchCounter += 1;
+
+      munchTotal += 1;
+
+      var k = Math.floor(Math.random() * 7);
+      var j = Math.floor(Math.random() * 5);
+
+      if (munchCounter % 2 !== 0) {
+        playAudio('munchEffect' + k);
       }
-      var i = Math.floor(Math.random() * totalMunchingAudio),
-          interval;                                                             // interval depends on general length of files
-      playAudio('munchingEffect' + i);
-      heldSounds = setTimeout(function () {                                     // setTimeout may not be required depending on if set interval pauses at first
-        loopSounds = setInterval(function () {
-          playAudio('munchingEffect' + Math.floor(Math.random() * totalMunchingAudio));
-          munchCounter += 1;                                                    // Possible addition, increase volume or intensity near end for indication
-          if (munchCounter > 40) {
-            munchResult(1);
-          }
-        }, interval);
-      }, interval);
-      starveRelease(heldSounds, loopSounds, munchCounter, totalMunchingAudio, totalStarvingAudio);
-    }
-  });
+
+      if (munchCounter > 4 && munchCounter % 2 === 0) {                         // TODO just improve the implementation
+        setTimeout(function () {
+          playAudio('crunchEffect' + j);
+        }, 500);
+      }
+      if (munchCounter > 7 && munchCounter % 2 === 0) {
+        setTimeout(function () {
+            playAudio('gruntEffect' + j);
+        }, 1000);
+        munchCounter = 0;
+      }
+      if (munchTotal > 50) {
+        clearTimeout(starveTimer);
+        for (var i = 0; i < munchTotal + 1; i++) {
+          clearInterval(starveInterval[i]);
+        }
+        munchResult(1);
+        stop = 1;
+      }
+      if (!stop) {
+        $(document).one('keyup', function (e) {
+          if (e.which === 32) {
+        starveRelease(audioTimer, munchCounter, munchTotal, munchTotal, starveTimer, starveInterval);
+        }
+      });
+      }
+  }
 }
 
 function munchingTime () {
@@ -169,18 +204,23 @@ function munchingTime () {
     showLine('Nothing is coming.', 50);
     showLine('Thinking of nothing.', 50);
     showLine('Nothing but... munching...', 100);
-    showLine('Press [SPACEBAR] to munch to be added', 50, 0, 0, 100, 'afterMessageInstruct');
+    showLine('Press [SPACEBAR] to munch', 50, 0, 0, 100, 'afterMessageInstruct');
 
 
-    nextScreenLoader(startWalking, 1000);
-    /*for (var i = 0; i < totalMunchingAudio; i++) {
-      addAudio('munchingEffect' + i, './audio/munching/munch' + i);
-      addAudio('starvingEffect' + i, './audio/starving/starve' + i);
+    for (var i = 0; i < 7; i++) {
+      addAudio('munchEffect' + i, './audio/munching/munch' + i + '.mp3');
     }
+    for (var j = 0; j < 5; j++) {
+      addAudio('crunchEffect' + j, './audio/munching/crunch' + j + '.mp3');
+    }
+    for (var k = 0; k < 5; k++) {
+      addAudio('gruntEffect' + k, './audio/munching/grunt' + k + '.mp3');
+    }
+    addAudio('starvingEffect', './audio/munching/starvation.mp3');
 
-    var heldSounds,
-        loopSounds;
-    munchPress(heldSounds, loopSounds); */                                      // activate section when audio ready
+    setTimeout(function () {
+      starveRelease();
+    }, 5500);
   }, 400);
 }
 

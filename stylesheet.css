@@ -39,9 +39,13 @@ h3 {
 }
 
 #bigOldTitle {
+  position: fixed;
+  white-space: nowrap;                /* remove this and the three lines after to fix word wrapping */
+  top: 50%;
+  left: 50%;
+   transform: translate(-50%, -50%);
   font-size: 102px;
   text-align: center;
-  padding-top: 25%;
   z-index: 1;
   letter-spacing: 15px;
 }
@@ -79,7 +83,7 @@ h3 {
 }
 
 #instructorLeft {
-  margin-left: 20%;
+  margin-left: 10%;
   margin-top: 10%;
   font-size: 24px;
 }

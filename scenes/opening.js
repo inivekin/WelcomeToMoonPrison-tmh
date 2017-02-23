@@ -56,7 +56,7 @@ function randomStars (i) {
     });
     var viewportWidth = $(window).width();
     var viewportHeight = $(window).height();
-    // FIXME try to keep star locations away from title (low priority)
+    
     var posX = ((Math.random() * (viewportWidth - divSize)) * 100  / viewportWidth).toFixed();
     var posY = ((Math.random() * (viewportHeight - divSize)) * 100 / viewportHeight).toFixed();
 
