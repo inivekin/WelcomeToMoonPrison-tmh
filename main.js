@@ -260,8 +260,12 @@ var stopAudio = function (id, fade) {
   if(!(fade === undefined)) {
     // code here if needed
   }
-}
+};
 
+var restartAudio = function (id) {
+  var audio = $('#' + id);
+  audio.get(0).currentTime = 0;
+};
 
 var playAudio = function (id) {
   $('#' + id).get(0).play();
