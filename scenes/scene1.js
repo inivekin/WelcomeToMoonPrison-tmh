@@ -205,7 +205,7 @@ function startWalking () {
 
 function munchResult (result) {
   if (result) {
-    //clearScreen(0, ['.msg'], 0);
+    clearScreen(0, ['.msg'], 0);
     nextScreenLoader(startWalking, 0);
   } else {
     clearScreen(300, ['.msg'], 600);
