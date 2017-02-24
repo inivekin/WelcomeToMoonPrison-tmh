@@ -17,6 +17,7 @@ function loadOpening () {
   var titlePage = document.createElement('h1');
   $(titlePage).attr('class', 'anyText').attr('id', 'bigOldTitle'); // .css('opacity', '0.0');
   titlePage.innerHTML = 'MOON PRISON';
+  $(titlePage).css('font-size', $(window).width() * $(window).height() * 7e-5);
   $('body').append(titlePage);
   var instruct = document.createElement('h3');
   $(instruct).attr('class', 'anyText').attr('id', 'instructor'); // .css('opacity', '0.0');
@@ -56,7 +57,7 @@ function randomStars (i) {
     });
     var viewportWidth = $(window).width();
     var viewportHeight = $(window).height();
-    
+
     var posX = ((Math.random() * (viewportWidth - divSize)) * 100  / viewportWidth).toFixed();
     var posY = ((Math.random() * (viewportHeight - divSize)) * 100 / viewportHeight).toFixed();
 

@@ -1,4 +1,13 @@
-function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements) {       // bug of undetermined cause makes bindings stop functioning after sometime
+function starredStep(clickCounter) {
+    /*
+    create an element, append element to body, append * to element
+    have css position (i.e top(static), left(dynamic) change by distance relative to window width and clickInterval size).
+    give element a fadeOut and animated movement upwards from bottom of screen
+    selectable font size? or also dependant on window width and cllick interval size?
+    */
+}
+
+function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements) {       // bug of undetermined cause makes bindings stop functioning after sometime (might be fixed)
   $(document).one('mousedown', function (e) {
     $(document).bind('contextmenu', function (e) {
       e.preventDefault();
@@ -13,7 +22,7 @@ function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClic
       $('#instructorLeft').fadeTo(clickInterval / 6, 0);
       setTimeout(function () {
         $('#instructorRight').fadeTo(clickInterval / 2, 1);
-      }, clickInterval / 2 + 350);
+    }, clickInterval / 2 + 300);
 
       console.log('left clicked');
       clearTimeout(rightClickTimer);
@@ -25,7 +34,6 @@ function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClic
       }, audioInterval);
       setTimeout(function () {
         $(document).unbind('contextmenu');
-
 
         $(document).bind('contextmenu', function (e) {
           e.preventDefault();
@@ -39,7 +47,7 @@ function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClic
           $('#instructorRight').fadeTo(clickInterval / 6, 0);
           setTimeout(function () {
             $('#instructorLeft').fadeTo(clickInterval / 2, 1);
-          }, clickInterval / 2 + 350);
+        }, clickInterval / 2 + 300);
 
           clearTimeout(leftClickTimer);
             console.log('right clicked');
@@ -47,8 +55,8 @@ function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClic
                 stopAudio('einstein');
             }, audioInterval);
             setTimeout(function () {
-              alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements);
-              $(document).unbind('contextmenu');
+                $(document).unbind('contextmenu');
+                alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements);
             }, clickInterval);
           return false;
         });
@@ -59,11 +67,10 @@ function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClic
 
 function startWalking () {
   addAudio('einstein', './audio/EOTB.webm', 22);
+  showLine('That\'s right...', 50, 1);
+  showLine('It wasn\'t just munching...', 50);
+  showLine('There was also something else...', 50);
   $('#einstein').on('canplay', function () {
-    showLine('That\'s right...', 50, 1);
-    showLine('It wasn\'t just munching...', 50);
-    showLine('There was also something else...', 50);
-
     setTimeout(function () {
       var instructorLeft = document.createElement('span');
       $('#txtDiv').append(instructorLeft);
@@ -98,19 +105,19 @@ function startWalking () {
         }
       }
       var leftClickTimer, rightClickTimer;
-      alternateClicks(900, 1300, leftClickTimer, rightClickTimer, animElements);
+      alternateClicks(900, 1400, leftClickTimer, rightClickTimer, animElements);
     }, 4500);
   });
 }
 
 function munchResult (result) {
   if (result) {
-    clearScreen(300, ['.msg'], 600);
+    clearScreen(300, ['.msg'], 300);
     nextScreenLoader(startWalking, 300);
   } else {
     clearScreen(300, ['.msg'], 600);
     setTimeout(function () {
-      showLine('You have DIED of STARVATION', 100, 1);
+      showLine('You have DIED of STARVATION', 100, 1, 0, 1000, 'starveDeath');
     }, 1300);
   }
 }
@@ -119,29 +126,44 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
   var starveInterval = [],
       starveCounter = 0;
 
-      var audioTimer = setTimeout(function () {
-        playAudio('starvingEffect');
-        restartAudio('starvingEffect');
-      }, 2000);
+      console.log('starve release started');
 
-      starveInterval[munchTotal] = setInterval(function () {
-        console.log('interval: ' + munchTotal);
-        starveCounter += 1;
-        starveTimer = setTimeout(function () {
-          munchCounter = 0;
-          clearTimeout(audioTimer);
-        }, 2000);
-        if (starveCounter > 38) {
-          clearTimeout(starveTimer);
-          for (var i = 0; i < munchTotal + 1; i++) {
-            clearInterval(starveInterval[i]);
-          }
-          stopAudio('starvingEffect');
-          munchResult(0);
-        }
-    }, 1000);
+      starveTimer = setTimeout(function () {
+        munchCounter = 0;
+        //clearTimeout(audioTimer); not sure why this was here in the first place
+      }, 250);
+
+      if (munchTotal > 8) {
+          starveCounter = 8;
+      } else if (munchTotal > 15) {
+          starveCounter = 15;
+      } else if (munchTotal > 21) {
+          starveCounter = 21;
+      } else if (munchTotal > 32) {
+          starveCounter = 32;
+      }
+
+      var audioTimer = setTimeout(function () {
+        //playAudio('starvingEffect');
+        restartAudio('starvingEffect', starveCounter);
+
+          starveInterval[munchTotal] = setInterval(function () {
+            starveCounter += 1;
+
+            if (starveCounter > 38) {
+              clearTimeout(starveTimer);
+              for (var i = 0; i < munchTotal + 1; i++) {
+                clearInterval(starveInterval[i]);
+              }
+              stopAudio('starvingEffect');
+              munchResult(0);
+            }
+        }, 1000);
+    }, 2000);
+
 
     $(document).one('keydown', function (e) {
+        console.log('launching munchPress');
       for (var i = 0; i < munchTotal + 1; i++) {
         clearInterval(starveInterval[i]);
       }
@@ -153,28 +175,30 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
 
 function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
     if (e.which === 32) {
+        console.log('munchpress launched');
       var stop = 0;
       clearTimeout(audioTimer);
       munchCounter += 1;
+
+      if (munchCounter > 3) {
+          munchCounter = 1;
+      }
 
       munchTotal += 1;
 
       var k = Math.floor(Math.random() * 7);
       var j = Math.floor(Math.random() * 5);
+      console.log(munchCounter);
 
-      if (munchCounter % 2 !== 0) {
-        playAudio('munchEffect' + k);
+      if (munchCounter === 1) {
+          playAudio('munchEffect' + k);
       }
 
-      if (munchCounter > 4 && munchCounter % 2 === 0) {                         // TODO just improve the implementation
-        setTimeout(function () {
+      if (munchCounter === 2) {                         // TODO just improve the implementation
           playAudio('crunchEffect' + j);
-        }, 500);
       }
-      if (munchCounter > 7 && munchCounter % 2 === 0) {
-        setTimeout(function () {
+      if (munchCounter === 3) {
             playAudio('gruntEffect' + j);
-        }, 1000);
         munchCounter = 0;
       }
       if (munchTotal > 50) {
@@ -187,9 +211,7 @@ function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
       }
       if (!stop) {
         $(document).one('keyup', function (e) {
-          if (e.which === 32) {
         starveRelease(audioTimer, munchCounter, munchTotal, munchTotal, starveTimer, starveInterval);
-        }
       });
       }
   }
