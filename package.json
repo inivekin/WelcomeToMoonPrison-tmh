@@ -7,5 +7,5 @@
   },
   "repository": {"type": "git", "url": "git://github.com/inivekin/WelcomeToMoonPrison-tmh"},
   "main" : "main.js",
-  "version" : "0.1"
+  "version" : "0.1.1"
 }

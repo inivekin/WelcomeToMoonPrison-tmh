@@ -43,8 +43,8 @@ h3 {
   white-space: nowrap;                /* remove this and the three lines after to fix word wrapping */
   top: 50%;
   left: 50%;
-   transform: translate(-50%, -50%);
-  font-size: 102px;
+  transform: translate(-50%, -50%);
+  /*font-size: 102px;*/
   text-align: center;
   z-index: 1;
   letter-spacing: 15px;
@@ -62,6 +62,7 @@ h3 {
 
 .openingText {
     margin-left: 15%;
+    margin-right: 15%;
 }
 
 .openingText1stLine {
@@ -83,15 +84,21 @@ h3 {
 }
 
 #instructorLeft {
-  margin-left: 10%;
+  margin-left: 5%;
   margin-top: 10%;
   font-size: 24px;
 }
 
 #instructorRight {
   font-size: 24px;
+  margin-right: 5%;
 }
 
 #animElem0 {
   font-size: 24px;
+}
+
+.starveDeath {
+    text-align: center;
+    font-size: 64px;
 }

@@ -262,9 +262,10 @@ var stopAudio = function (id, fade) {
   }
 };
 
-var restartAudio = function (id) {
+var restartAudio = function (id, startTime = 0) {
   var audio = $('#' + id);
-  audio.get(0).currentTime = 0;
+  audio.currentTime = startTime;
+  audio.get(0).play();
 };
 
 var playAudio = function (id) {
