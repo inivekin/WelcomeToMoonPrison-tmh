@@ -264,7 +264,7 @@ var stopAudio = function (id, fade) {
 
 var restartAudio = function (id, startTime = 0) {
   var audio = $('#' + id);
-  audio.currentTime = startTime; // not working, might need get(0)?
+  audio.currentTime = startTime;
   audio.get(0).play();
 };
 
