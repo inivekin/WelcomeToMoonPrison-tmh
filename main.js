@@ -275,20 +275,20 @@ var playAudio = function (id) {
 
 function nextScreenLoader (functionToRun, screenPause) {
   var nextScreenLoader = setTimeout(function () {
-    $(document).unbind('mousedown.screenBreak');
+  //  $(document).unbind('mousedown.screenBreak');
     nextScreenLoader.noBreakCheck = true;
     clearScreen(100, ['.msg', '.pBreaks'], screenPause);
     setTimeout(function () { functionToRun(); }, screenPause + 100);
     }, this.totalDelay);
 
-  $(document).bind('mousedown.screenBreak', function () {
+  /* $(document).bind('mousedown.screenBreak', function () {
     $(document).unbind('mousedown.screenBreak');
       if (!nextScreenLoader.noBreakCheck) {
       clearTimeout(nextScreenLoader);
       clearScreen(1000, ['.msg', '.pBreaks'], screenPause);
       setTimeout(function () { functionToRun(); }, screenPause + 1000);
       }
-  });
+  }); */
 }
 
 function loadScene (sceneScriptFile) {

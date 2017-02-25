@@ -1,13 +1,37 @@
-function starredStep(clickCounter) {
-    /*
-    create an element, append element to body, append * to element
-    have css position (i.e top(static), left(dynamic) change by distance relative to window width and clickInterval size).
-    give element a fadeOut and animated movement upwards from bottom of screen
-    selectable font size? or also dependant on window width and cllick interval size?
-    */
+function nowRun() {
+  clearScreen();
+  showLine('Oh, it was running', 100, 1);
 }
 
-function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl) {       // bug of undetermined cause makes bindings stop functioning after sometime (might be fixed)
+function walkFaster (clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter = 0) {
+  clearScreen();
+  showLine('What was it?', 25, 1);
+  setTimeout(function () {
+    $('#instructorLeft').fadeTo(500, 1);
+    alternateClicks(450, 800, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl);
+  }, 900);
+}
+
+function starredStep (clickCounter, clickInterval) {
+    console.log('creatingstar');
+    var stepStar = document.createElement('div');
+    $(stepStar).css({
+      'display'  : 'block',
+      'position' : 'absolute',
+      'left'     : clickCounter * ($(window).width() / ((1800 - clickInterval) * 0.01)) - ($(window).width() / ((1800 - clickInterval) * 0.01)) + 'px',
+      'bottom'   : '2%',
+      'font-size': ($(window).width() / (1800 - clickInterval)) * 20 + 'px'
+    }).appendTo('body').html('*').attr('class', 'anyText').attr('id', 'starStep' + clickCounter).animate({
+      'opacity': '0',
+      'bottom': '7%',
+      'font-size': '+=20px'
+    }, 1000);
+    setTimeout(function () {
+      $('#starStep' + clickCounter).remove();
+    }, 1100);
+}
+
+function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter = 0) {
   $(document).one('mousedown', function (e) {
     $(document).bind('contextmenu', function (e) {
       e.preventDefault();
@@ -17,18 +41,21 @@ function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClic
         gainConvolver.gain.value = 0;
         gainControl.gain.value = 1;
 
+        clickCounter += 1;
+        starredStep(clickCounter, clickInterval);
+
         var rightReverbTimer, leftReverbTimer;
         clearTimeout(rightClickTimer);
         clearTimeout(rightReverbTimer);
 
       for (var i = 0; i < (animElements[0].length + 3) / 4; i++) {
-        $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * (clickInterval / 6) + 500, 1);
+        $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
         $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * 0.5 * (clickInterval / 6), 0);
       }
       $('#instructorLeft').fadeTo(clickInterval / 6, 0);
       setTimeout(function () {
         $('#instructorRight').fadeTo(clickInterval / 2, 1);
-    }, clickInterval / 2 + 300);
+    }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
 
       if(($('#einstein').get(0).paused)) {
         $('#einstein').get(0).play();
@@ -52,6 +79,9 @@ function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClic
           gainConvolver.gain.value = 0;
           gainControl.gain.value = 1;
 
+          clickCounter += 1;
+          starredStep(clickCounter, clickInterval);
+
           clearTimeout(leftClickTimer);
           clearTimeout(leftReverbTimer);
 
@@ -60,14 +90,14 @@ function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClic
           }
 
           for (var i = 0; i < animElements[0].length / 2; i++) {
-            $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * (clickInterval / 6) + 500, 1);
+            $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
             $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * 0.5 * (clickInterval / 6), 0);
           }
 
           $('#instructorRight').fadeTo(clickInterval / 6, 0);
           setTimeout(function () {
             $('#instructorLeft').fadeTo(clickInterval / 2, 1);
-        }, clickInterval / 2 + 300);
+        }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
 
           rightClickTimer = setTimeout(function () {
               gainConvolver.gain.value = 1;
@@ -78,11 +108,21 @@ function alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClic
           }, audioInterval);
 
           setTimeout(function () {
-                $(document).unbind('contextmenu');
-                alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl);
+            $(document).unbind('contextmenu');
+            if (clickCounter > ((1800 - clickInterval) / 100)) {
+              clearTimeout(rightClickTimer);
+              /* $('.animElements').css('opacity', '0');                        // don't turn back on for some reason (maybe try fadeTo?)
+              $('#instructorRight').css('opacity', '0');
+              $('#instructorLeft').css('opacity', '0');
+              walkFaster(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl); */
+            } else {
+              alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter);
+            }
           }, clickInterval);
         });
       }, clickInterval);
+    } else {
+      alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter);
     }
   });
 }
@@ -150,12 +190,12 @@ function startWalking () {
 
 
   var convolver = new tuna.Convolver({
-  highCut: 10000,                         //20 to 22050
-  lowCut: 20,                             //20 to 22050
-  dryLevel: 1,                            //0 to 1+
-  wetLevel: 1,                            //0 to 1+
-  level: 1,                               //0 to 1+, adjusts total output of both wet and dry
-  impulse: "./audio/impulses/PrimeLong.wav",    //the path to your impulse response
+  highCut: 10000,                         // 20 to 22050
+  lowCut: 20,                             // 20 to 22050
+  dryLevel: 1,                            // 0 to 1+
+  wetLevel: 1,                            // 0 to 1+
+  level: 1,                               // 0 to 1+, adjusts total output of both wet and dry
+  impulse: './audio/impulses/PrimeLong.wav',    // the path to your impulse response
   bypass: 0
   });
 
@@ -285,8 +325,9 @@ function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
       if (munchCounter === 2) {                         // TODO just improve the implementation
           playAudio('crunchEffect' + j);
       }
-      if (munchCounter === 3) {
+      if ((munchCounter === 3) && (munchTotal % 2 === 0)) {
             playAudio('gruntEffect' + j);
+            console.log('playing grunt');
         munchCounter = 0;
       }
       if (munchTotal > 50) {
