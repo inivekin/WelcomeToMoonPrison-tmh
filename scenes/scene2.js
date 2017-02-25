@@ -14,7 +14,7 @@ function scene2starter()
   pushFloatingTextQueue(50, 30, "...surrounded by green trees...", 1500, 2000, 1500, 2000);
   pushFloatingTextQueue(0, 40, "...and a little frog...", 1500, 2000, 1500, 2000);
   pushFloatingTextQueue(30, 50, "...playing in a pond...", 1500, 2000, 1500, 2000);
-  pushFloatingTextQueue(50, 60, "...and he signs a song:...", 1500, 2000, 1500, 2000);
+  pushFloatingTextQueue(50, 60, "...and he sings a song:", 1500, 2000, 1500, 2000);
   
   pushFloatingTextQueue(0, 10, "Hi there!", 1500, 2000, 1500, 2000);
   pushFloatingTextQueue(50, 20, "It's just so nice to see you!", 1500, 2000, 1500, 2000);
