@@ -225,27 +225,32 @@ function answerActivation (answers, options, altOptions) {
 }
 }
 
-function answerOptions (options, altOptions) {
+function answerOptions (options, altOptions, optionCallbacks = false) {
   var answers = [], ansDel;
   for (var i = 0; i < stringArray.length; i++) {
     ansDel = stringArray[i].length * 50;
   }
   setTimeout(function () {
-  for (var i = 0; i < options.length; i++) {
-    answers[i] = document.createElement('p');
-    answers[i].setAttribute('id', 'ansOp' + i);
-    answers[i].setAttribute('class', 'selectable');
-    $('#ansDiv').append(answers[i]);
+    var opID;
+    for (var i = 0; i < options.length; i++) {
+      opID = 'ansOp' + i;
+      answers[i] = document.createElement('p');
+      answers[i].setAttribute('id', opID);
+      answers[i].setAttribute('class', 'selectable');
+      $('#ansDiv').append(answers[i]);
 
-    /*var lineBreak = document.createElement('br');
-    lineBreak.setAttribute('class', 'pBreaks');
-    $('#ansDiv').append(lineBreak); */                              // removal of pBreaks makes this unecessary
+      /*var lineBreak = document.createElement('br');
+        lineBreak.setAttribute('class', 'pBreaks');
+        $('#ansDiv').append(lineBreak); */                              // removal of pBreaks makes this unecessary
 
-    showTextByWord('ansOp', '#ansDiv', options[i], 0, 50, i);
+      showTextByWord('ansOp', '#ansDiv', options[i], 0, 50, i);
+      if(optionCallbacks) {
+        $('#ansDiv').on('mousedown', '#' + opID, optionCallbacks[i]);
+      }
     }
     answerActivation(answers, options, altOptions);
-    }, ansDel);
-  }
+  }, ansDel);
+}
 
 
 var addAudio = function (id, location, startTime = 0) {
