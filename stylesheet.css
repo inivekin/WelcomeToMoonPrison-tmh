@@ -71,7 +71,7 @@ h3 {
 
 .afterMessageInstruct {
     font-size: 58px;
-    margin-left: 25%vh;
+    margin-left: 25%;
 }
 
 .selectable {
@@ -84,18 +84,25 @@ h3 {
 }
 
 #instructorLeft {
-  margin-left: 5%;
-  margin-top: 10%;
+  position: absolute;
+  left: 5%;
+  top: 75%;
   font-size: 24px;
 }
 
 #instructorRight {
+  position: absolute;
   font-size: 24px;
-  margin-right: 5%;
+  top: 75%;
+  right: 5%;
 }
 
-#animElem0 {
+span#animElem0 {
+  position: absolute;
+  top: 75%;
+  left: 50%;
   font-size: 24px;
+  transform: translate(-50%, -50%);
 }
 
 .starveDeath {
