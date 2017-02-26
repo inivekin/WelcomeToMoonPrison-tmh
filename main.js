@@ -255,6 +255,11 @@ var addAudio = function (id, location, startTime = 0) {
   audio.currentTime = startTime;
 };
 
+var removeAudio = function(id) {
+  var audio = document.getElementById(id);
+  $(audio).remove();
+};
+
 var stopAudio = function (id, fade) {
   $('#' + id).get(0).pause();
   if(!(fade === undefined)) {

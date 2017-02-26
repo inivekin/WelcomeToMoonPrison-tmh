@@ -1,26 +1,35 @@
 function nowRun() {
   clearScreen();
-  showLine('Oh, it was running', 100, 1);
+  stopAudio('einstein');
+  setTimeout(function () {
+    $('.animElements').fadeTo(500, 0);
+    $('#instructorRight').fadeTo(500, 0);
+    $('#instructorLeft').fadeTo(500, 0);
+    showLine('Oh, it was running', 100, 1);
+  }, 600);
 }
 
 function walkFaster (clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter = 0) {
   clearScreen();
-  showLine('What was it?', 25, 1);
+  $('.animElements').fadeTo(500, 0);
+  $('#instructorRight').fadeTo(500, 0);
+  $('#instructorLeft').fadeTo(500, 0);
   setTimeout(function () {
+    showLine('What was it?', 50, 1);
+    $('.animElements').fadeTo(500, 1);
     $('#instructorLeft').fadeTo(500, 1);
-    alternateClicks(450, 800, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl);
-  }, 900);
+    alternateClicks(300, 700, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, 0, 1);
+  }, 1200);
 }
 
 function starredStep (clickCounter, clickInterval) {
-    console.log('creatingstar');
     var stepStar = document.createElement('div');
     $(stepStar).css({
       'display'  : 'block',
       'position' : 'absolute',
-      'left'     : clickCounter * ($(window).width() / ((1800 - clickInterval) * 0.01)) - ($(window).width() / ((1800 - clickInterval) * 0.01)) + 'px',
+      'left'     : clickCounter * ($(window).width() / ((1850 - clickInterval) * 0.01)) - ($(window).width() / ((1850 - clickInterval) * 0.01)) + 'px',
       'bottom'   : '2%',
-      'font-size': ($(window).width() / (1800 - clickInterval)) * 20 + 'px'
+      'font-size': ($(window).width() / (1700 - clickInterval)) * 20 + 'px'
     }).appendTo('body').html('*').attr('class', 'anyText').attr('id', 'starStep' + clickCounter).animate({
       'opacity': '0',
       'bottom': '7%',
@@ -31,7 +40,7 @@ function starredStep (clickCounter, clickInterval) {
     }, 1100);
 }
 
-function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter = 0) {
+function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter = 0, next = 0) {
   $(document).one('mousedown', function (e) {
     $(document).bind('contextmenu', function (e) {
       e.preventDefault();
@@ -66,13 +75,20 @@ function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightCli
           gainControl.gain.value = 0;
           setTimeout(function () {
               stopAudio('einstein');
-          }, 100);
+          }, 200);
       }, audioInterval);
 
-
+      /* if ((clickCounter > (1800 - clickInterval) / 100)) {
+        clearTimeout(leftClickTimer);
+        clearTimeout(rightClickTimer);
+        if (next === 1) {
+          nowRun();
+        } else {
+          walkFaster(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl);
+        }
+      } else { */
       setTimeout(function () {
         $(document).unbind('contextmenu');
-
         $(document).bind('contextmenu', function (e) {
           e.preventDefault();
 
@@ -104,26 +120,34 @@ function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightCli
               gainControl.gain.value = 0;
               setTimeout(function () {
                   stopAudio('einstein');
-              }, 100);
+              }, 200);
           }, audioInterval);
 
           setTimeout(function () {
             $(document).unbind('contextmenu');
-            if (clickCounter > ((1800 - clickInterval) / 100)) {
+            if (clickCounter > ((1700 - clickInterval) / 100)) {
+              clearTimeout(leftClickTimer);
               clearTimeout(rightClickTimer);
-              /* $('.animElements').css('opacity', '0');                        // don't turn back on for some reason (maybe try fadeTo?)
-              $('#instructorRight').css('opacity', '0');
-              $('#instructorLeft').css('opacity', '0');
-              walkFaster(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl); */
+
+              if (next === 1) {
+                nowRun();
+                return false;
+              } else {
+                walkFaster(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl);
+                return false;
+              }
             } else {
-              alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter);
+              alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter, next);
             }
+            return false;
           }, clickInterval);
         });
       }, clickInterval);
+    //}
     } else {
-      alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter);
+      alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter, next);
     }
+    return false;
   });
 }
 
@@ -209,7 +233,7 @@ function startWalking () {
     setTimeout(function () {
       var instructorLeft = document.createElement('span');
       $('#txtDiv').append(instructorLeft);
-      $(instructorLeft).attr('class', 'anyText').html('[left click] ').attr('id', 'instructorLeft').fadeIn(2000);
+      $(instructorLeft).attr('class', 'anyText').html('[left click]').attr('id', 'instructorLeft').fadeIn(2000);
 
 
       var animElements = ['* - - - - - _ - - - - - *'],
@@ -244,6 +268,16 @@ function startWalking () {
 }
 
 function munchResult (result) {
+  for (var i = 0; i < 7; i++) {
+    removeAudio('munchEffect' + i, './audio/munching/munch' + i + '.mp3');
+  }
+  for (var j = 0; j < 5; j++) {
+    removeAudio('crunchEffect' + j, './audio/munching/crunch' + j + '.mp3');
+  }
+  for (var k = 0; k < 5; k++) {
+    removeAudio('gruntEffect' + k, './audio/munching/grunt' + k + '.mp3');
+  }
+  removeAudio('starvingEffect', './audio/munching/starvation.mp3');
   if (result) {
     clearScreen(0, ['.msg'], 0);
     nextScreenLoader(startWalking, 0);
@@ -261,7 +295,6 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
 
       starveTimer = setTimeout(function () {
         munchCounter = 0;
-        //clearTimeout(audioTimer); not sure why this was here in the first place
       }, 250);
 
       if (munchTotal > 8) {
@@ -275,7 +308,6 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
       }
 
       var audioTimer = setTimeout(function () {
-        //playAudio('starvingEffect');
         restartAudio('starvingEffect', starveCounter);
 
           starveInterval[munchTotal] = setInterval(function () {
@@ -290,7 +322,7 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
               munchResult(0);
             }
         }, 1000);
-    }, 2000);
+    }, 500);
 
 
     $(document).one('keydown', function (e) {
@@ -326,8 +358,10 @@ function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
           playAudio('crunchEffect' + j);
       }
       if ((munchCounter === 3) && (munchTotal % 2 === 0)) {
-            playAudio('gruntEffect' + j);
-            console.log('playing grunt');
+        if (Math.random() > 0.5) {
+          playAudio('gruntEffect' + j);
+          console.log('playing grunt');
+        }
         munchCounter = 0;
       }
       if (munchTotal > 50) {
@@ -410,6 +444,7 @@ function scene1starter () {
 
 
 $(document).ready(function () {
+
   setTimeout(function () {
     showLine('Welcome to Moon Prison.', 50, 1);
     showLine('This is your cell.', 50);
