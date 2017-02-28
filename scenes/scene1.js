@@ -1,11 +1,36 @@
+function freeClicking (clickCounter = 0, extra = 3000) {
+  $(document).one('mousedown', function (e) {
+    playAudio('MoDemJams');
+    $(document).unbind('contextmenu');
+    $(document).bind('contextmenu.prevention', function (e) {
+      e.preventDefault();
+      return false;
+    });
+    if (e.which === 1) {
+        clickCounter += 1;
+        starredStep(clickCounter, 100, extra);
+        $(document).unbind('contextmenu.prevention');
+        $(document).bind('contextmenu', function (e) {
+          e.preventDefault();
+
+          clickCounter += 1;
+          starredStep(clickCounter, 100, extra);
+          freeClicking(clickCounter);
+          return false;
+        });
+    } else {
+        freeClicking(clickCounter);
+    }
+    });
+ }
+
 function nowRun() {
-  clearScreen();
+  clearScreen(300, ['.animElem', '.anyText'], 300);
   stopAudio('einstein');
+  addAudio('MoDemJams', './audio/MoDemJams.webm', 12);
   setTimeout(function () {
-    $('.animElements').fadeTo(500, 0);
-    $('#instructorRight').fadeTo(500, 0);
-    $('#instructorLeft').fadeTo(500, 0);
     showLine('Oh, it was running', 100, 1);
+    freeClicking();
   }, 600);
 }
 
@@ -22,19 +47,19 @@ function walkFaster (clickInterval, audioInterval, leftClickTimer, rightClickTim
   }, 1200);
 }
 
-function starredStep (clickCounter, clickInterval) {
+function starredStep (clickCounter, clickInterval, extra = 0) {
     var stepStar = document.createElement('div');
     $(stepStar).css({
       'display'  : 'block',
       'position' : 'absolute',
-      'left'     : clickCounter * ($(window).width() / ((1850 - clickInterval) * 0.01)) - ($(window).width() / ((1850 - clickInterval) * 0.01)) + 'px',
+      'left'     : clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
       'bottom'   : '2%',
       'font-size': ($(window).width() / (1700 - clickInterval)) * 20 + 'px'
     }).appendTo('body').html('*').attr('class', 'anyText').attr('id', 'starStep' + clickCounter).animate({
       'opacity': '0',
       'bottom': '7%',
       'font-size': '+=20px'
-    }, 1000);
+  }, 1000, 'linear');
     setTimeout(function () {
       $('#starStep' + clickCounter).remove();
     }, 1100);
@@ -73,20 +98,11 @@ function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightCli
       leftClickTimer = setTimeout(function () {
           gainConvolver.gain.value = 1;
           gainControl.gain.value = 0;
-          setTimeout(function () {
+          setTimeout(function (){
               stopAudio('einstein');
-          }, 200);
+          },0);
       }, audioInterval);
 
-      /* if ((clickCounter > (1800 - clickInterval) / 100)) {
-        clearTimeout(leftClickTimer);
-        clearTimeout(rightClickTimer);
-        if (next === 1) {
-          nowRun();
-        } else {
-          walkFaster(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl);
-        }
-      } else { */
       setTimeout(function () {
         $(document).unbind('contextmenu');
         $(document).bind('contextmenu', function (e) {
@@ -118,9 +134,9 @@ function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightCli
           rightClickTimer = setTimeout(function () {
               gainConvolver.gain.value = 1;
               gainControl.gain.value = 0;
-              setTimeout(function () {
+              setTimeout(function (){
                   stopAudio('einstein');
-              }, 200);
+              },0);
           }, audioInterval);
 
           setTimeout(function () {
@@ -151,54 +167,8 @@ function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightCli
   });
 }
 
-//function setupWebAudio() {
-    /* var audio = document.getElementById('einstein');
-    var context = new AudioContext();
-    var source = context.createMediaElementSource(audio);
-    var convolver = context.createConvolver();
-    var irRRequest = new XMLHttpRequest();
-    irRRequest.open("GET", "./audio/impulses/PrimeLong.aiff", true);
-    irRRequest.responseType = "arraybuffer";
-    irRRequest.onload = function() {
-        context.decodeAudioData( irRRequest.response,
-            function(buffer) { convolver.buffer = buffer; } );
-    }
-    irRRequest.send();
-// note the above is async; when the buffer is loaded, it will take effect, but in the meantime, the sound will be unaffected.
-
-    source.connect( convolver );
-    convolver.connect( context.destination ); */ // without tuna method
-
-/*    var context = new AudioContext();
-    var tuna = new Tuna(context);
-    var audio = $('#einstein').get(0);
-    var source = context.createMediaElementSource(audio);
-    var gainControl = context.createGain();
-
-
-    var convolver = new tuna.Convolver({
-    highCut: 10000,                         //20 to 22050
-    lowCut: 20,                             //20 to 22050
-    dryLevel: 1,                            //0 to 1+
-    wetLevel: 1,                            //0 to 1+
-    level: 1,                               //0 to 1+, adjusts total output of both wet and dry
-    impulse: "./audio/impulses/PrimeLong.wav",    //the path to your impulse response
-    bypass: 0
-    });
-
-    source.connect(convolver);
-    source.connect(gainControl);
-    console.log(convolver);
-    convolver.connect(gainControl)
-    gainControl.connect(context.destination);
-    console.log('starting source');
-
-    return convolver;
-} */
-
-
 function startWalking () {
-  addAudio('einstein', './audio/EOTB.webm', 22);
+  addAudio('einstein', './audio/EOTB.ogg', 22);
   showLine('That\'s right...', 50, 1);
   showLine('It wasn\'t just munching...', 50);
   showLine('There was also something else...', 50);
@@ -278,6 +248,7 @@ function munchResult (result) {
     removeAudio('gruntEffect' + k, './audio/munching/grunt' + k + '.mp3');
   }
   removeAudio('starvingEffect', './audio/munching/starvation.mp3');
+
   if (result) {
     clearScreen(0, ['.msg'], 0);
     nextScreenLoader(startWalking, 0);
@@ -451,5 +422,5 @@ $(document).ready(function () {
     showLine('A perfect glass room and a sun that never sets.', 50);
     showLine('Amazing.', 100);
     nextScreenLoader(scene1starter, 300);
-  }, 200);
+}, 200);
 });
