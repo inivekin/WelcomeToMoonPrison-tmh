@@ -2,11 +2,11 @@ $(document).ready(function () {
   setTimeout(function () {
     this.floatingTextQueue = [];
     this.queueFinishFunc = null;
-    nextScreenLoader(scene2screen1, 0);
+    nextScreenLoader(scene2Screen1, 0);
   }, 200);
 });
 
-function scene2screen1()
+function scene2Screen1()
 {
   addAudio('forestImpression', './audio/ForestImpression.ogg');
   playAudio('forestImpression');
@@ -31,20 +31,20 @@ function scene2screen1()
   pushFloatingTextQueue(10, 80, "I can’t be up too late", 1500, 2000, 1500, 2000);
   pushFloatingTextQueue(10, 90, "So what is the choice you make?", 1500, 2000, 1500, 2000);
   
-  this.queueFinishFunc = function () { nextScreenLoader(scene2screen2, 0); };
+  this.queueFinishFunc = function () { nextScreenLoader(scene2Question1, 0); };
   runFloatingTextQueue();
 }
 
-function scene2screen2()
+function scene2Question1()
 {
   stopAudio('forestImpression'); // TODO this would sound better faded out
   answerOptions(['CLIMB A TREE', 'I\'M BUSY'],
                 ['', ''],
-                [function () { nextScreenLoader(scene2ClimbTree1, 0); },
-                 function () { nextScreenLoader(scene2Busy, 0); }]);
+                [function () { nextScreenLoader(scene2Correct1, 0); },
+                 function () { nextScreenLoader(scene2Incorrect1, 0); }]);
 }
 
-function scene2ClimbTree1()
+function scene2Correct1()
 {
   clearScreen(0, ['.selectable'], 0);
   $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
@@ -59,7 +59,7 @@ function scene2ClimbTree1()
   runFloatingTextQueue();
 }
 
-function scene2Busy()
+function scene2Incorrect1()
 {
   clearScreen(0, ['.selectable'], 0);
   $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
@@ -70,11 +70,11 @@ function scene2Busy()
   pushFloatingTextQueue(0, 40, "Waiting to shake your faith...", 1500, 2000, null, 2000);
   pushFloatingTextQueue(0, 50, "Faith that it’s all okay...", 1500, 2000, null, 2000);
   
-  this.queueFinishFunc = function () { nextScreenLoader(scene2OkayNotOkay, 0); };
+  this.queueFinishFunc = function () { nextScreenLoader(scene2Question2, 0); };
   runFloatingTextQueue();
 }
 
-function scene2OkayNotOkay()
+function scene2Question2()
 {
   nextScreenLoader(
     function () {
@@ -104,7 +104,7 @@ function runFloatingTextQueue()
   {
     var queueObject = this.floatingTextQueue.shift();
     var floatingDiv = document.createElement('div');
-    $(floatingDiv).attr('class', 'msg scene2screen1FloatText');
+    $(floatingDiv).attr('class', 'msg scene2Screen1FloatText');
     $(floatingDiv).css('position', 'absolute');
     $(floatingDiv).css('left', queueObject['left'] + '%');
     $(floatingDiv).css('top', queueObject['top'] + '%');
@@ -135,5 +135,5 @@ function runFloatingTextQueue()
 
 function clearFloatingText()
 {
-    $('body').remove('.scene2screen1FloatText');
+    $('body').remove('.scene2Screen1FloatText');
 }
