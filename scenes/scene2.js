@@ -2,11 +2,11 @@ $(document).ready(function () {
   setTimeout(function () {
     this.floatingTextQueue = [];
     this.queueFinishFunc = null;
-    nextScreenLoader(scene2screen1, 0);
+    nextScreenLoader(scene2Screen1, 0);
   }, 200);
 });
 
-function scene2screen1()
+function scene2Screen1()
 {
   addAudio('forestImpression', './audio/ForestImpression.ogg');
   playAudio('forestImpression');
@@ -31,20 +31,20 @@ function scene2screen1()
   pushFloatingTextQueue(10, 80, "I can’t be up too late", 1500, 2000, 1500, 2000);
   pushFloatingTextQueue(10, 90, "So what is the choice you make?", 1500, 2000, 1500, 2000);
   
-  this.queueFinishFunc = function () { nextScreenLoader(scene2screen2, 0); };
+  this.queueFinishFunc = function () { nextScreenLoader(scene2Question1, 0); };
   runFloatingTextQueue();
 }
 
-function scene2screen2()
+function scene2Question1()
 {
   stopAudio('forestImpression'); // TODO this would sound better faded out
   answerOptions(['CLIMB A TREE', 'I\'M BUSY'],
                 ['', ''],
-                [function () { nextScreenLoader(scene2ClimbTree1, 0); },
-                 function () { nextScreenLoader(scene2Busy, 0); }]);
+                [function () { nextScreenLoader(scene2Correct1, 0); },
+                 function () { nextScreenLoader(scene2Incorrect1, 0); }]);
 }
 
-function scene2ClimbTree1()
+function scene2Correct1()
 {
   clearScreen(0, ['.selectable'], 0);
   $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
@@ -59,7 +59,7 @@ function scene2ClimbTree1()
   runFloatingTextQueue();
 }
 
-function scene2Busy()
+function scene2Incorrect1()
 {
   clearScreen(0, ['.selectable'], 0);
   $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
@@ -70,19 +70,107 @@ function scene2Busy()
   pushFloatingTextQueue(0, 40, "Waiting to shake your faith...", 1500, 2000, null, 2000);
   pushFloatingTextQueue(0, 50, "Faith that it’s all okay...", 1500, 2000, null, 2000);
   
-  this.queueFinishFunc = function () { nextScreenLoader(scene2OkayNotOkay, 0); };
+  this.queueFinishFunc = function () { nextScreenLoader(scene2Question2, 0); };
   runFloatingTextQueue();
 }
 
-function scene2OkayNotOkay()
+function scene2Question2()
 {
+  stopAudio('forestImpression'); // TODO this would sound better faded out
   nextScreenLoader(
     function () {
       answerOptions(['I\'M OKAY', 'I\'M NOT OKAY'],
                     ['', ''],
-                    [function () { /* TODO */ },
-                     function () { /* TODO */ }]);
+                    [function () { nextScreenLoader(scene2Incorrect2, 0); },
+                     function () { nextScreenLoader(scene2Correct2, 0); }]);
     }, 0);
+}
+
+function scene2Correct2()
+{
+  clearScreen(0, ['.selectable'], 0);
+  $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
+  playAudio('forestImpression');
+  pushFloatingTextQueue(0, 10, "Freedom’s not something that you say, it’s", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 20, "Living with your mistakes, it’s", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 30, "Reaching within ourselves...", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 40, "Because we are like no one else...", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 50, "Free to just be ourselves...", 1500, 2000, null, 2000);
+  
+  this.queueFinishFunc = function () { nextScreenLoader(scene2Question3Correct, 0); };
+  runFloatingTextQueue();
+}
+
+function scene2Question3Correct()
+{
+  stopAudio('forestImpression'); // TODO this would sound better faded out
+  // TODO check if correct/incorrect are assigned to the right choices
+  nextScreenLoader(
+    function () {
+      answerOptions(['I DON\'T REMEMBER WHAT I\'VE DONE', 'I DON\'T REMEMBER WHO I AM'],
+                    ['', ''],
+                    [function () { nextScreenLoader(scene2Incorrect3, 0); },
+                     function () { nextScreenLoader(scene2Correct3, 0); }]);
+    }, 0);
+}
+
+function scene2Incorrect2()
+{
+  clearScreen(0, ['.selectable'], 0);
+  $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
+  playAudio('forestImpression');
+  pushFloatingTextQueue(0, 10, "I see a man that is not ok, who,", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 20, "Runs from his own mistakes, who", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 30, "Thinks that he could escape...", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 40, "Escape the mistakes he’s made...", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 50, "He thinks he’ll escape his fate...", 1500, 2000, null, 2000);
+  
+  this.queueFinishFunc = function () { nextScreenLoader(scene2Question3Incorrect, 0); };
+  runFloatingTextQueue();
+}
+
+function scene2Question3Incorrect()
+{
+  stopAudio('forestImpression'); // TODO this would sound better faded out
+  // TODO check if correct/incorrect are assigned to the right choices
+  nextScreenLoader(
+    function () {
+      answerOptions(['STAY', 'ESCAPE'],
+                    ['', ''],
+                    [function () { nextScreenLoader(scene2Correct3, 0); },
+                     function () { nextScreenLoader(scene2Incorrect3, 0); }]);
+    }, 0);
+}
+
+function scene2Correct3()
+{
+  clearScreen(0, ['.selectable'], 0);
+  $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
+  playAudio('forestImpression');
+  pushFloatingTextQueue(0, 10, "Stay then,", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 20, "It’s okay then", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 30, "Stay then", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 40, "Stay and then", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 50, "Then you can stay and then", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 60, "Stay then", 1500, 2000, null, 2000);
+  
+  this.queueFinishFunc = null;
+  runFloatingTextQueue();
+}
+
+function scene2Incorrect3()
+{
+  clearScreen(0, ['.selectable'], 0);
+  $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
+  playAudio('forestImpression');
+  pushFloatingTextQueue(0, 10, "Escape then", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 20, "Go ‘head we’re waiting", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 30, "You’ve been", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 40, "So awfully patient", 1500, 2000, null, 2000);
+  pushFloatingTextQueue(0, 50, "So thank you for not going anywhere", 1500, 2000, null, 2000);
+  
+  this.queueFinishFunc = null;
+  runFloatingTextQueue();
 }
 
 function pushFloatingTextQueue(left, top, text, fadeInDur, delayDur, fadeOutDur, timeoutDur)
@@ -104,7 +192,7 @@ function runFloatingTextQueue()
   {
     var queueObject = this.floatingTextQueue.shift();
     var floatingDiv = document.createElement('div');
-    $(floatingDiv).attr('class', 'msg scene2screen1FloatText');
+    $(floatingDiv).attr('class', 'msg scene2FloatText');
     $(floatingDiv).css('position', 'absolute');
     $(floatingDiv).css('left', queueObject['left'] + '%');
     $(floatingDiv).css('top', queueObject['top'] + '%');
@@ -135,5 +223,5 @@ function runFloatingTextQueue()
 
 function clearFloatingText()
 {
-    $('body').remove('.scene2screen1FloatText');
+  $('body').remove('.scene2FloatText');
 }
