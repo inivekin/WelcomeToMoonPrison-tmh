@@ -22,7 +22,19 @@ function clearScreen (screenPause = 500, element = ['.msg'], fadeTime = 500) {
     for (var i = 0; i < element.length; i++) {
       $(element[i]).remove();
     }
+    clearAnswerOptionBindings();
   }, fadeTime + screenPause);
+}
+
+function clearAnswerOptionBindings()
+{
+  // Unbind old answer option bindings if we had any
+  if(this.answerOptionBindings) {
+    for(var i = 0; i < this.answerOptionBindings.length; ++i) {
+      $('#ansDiv').off('mousedown', this.answerOptionBindings[i]);
+    }
+    this.answerOptionBindings = [];
+  }
 }
 
 var revealByLetter = function (targetChild, stringWordArray, interval, i, stringLength, count, fadeLength) {
@@ -246,6 +258,10 @@ function answerOptions (options, altOptions, optionCallbacks = false) {
       showTextByWord('ansOp', '#ansDiv', options[i], 0, 50, i);
       if(optionCallbacks) {
         $('#ansDiv').on('mousedown', '#' + opID, optionCallbacks[i]);
+        if(!this.answerOptionBindings) {
+          this.answerOptionBindings = [];
+        }
+        this.answerOptionBindings.push('#' + opID);
       }
     }
     answerActivation(answers, options, altOptions);
