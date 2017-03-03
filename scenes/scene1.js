@@ -1,4 +1,48 @@
-function freeClicking (clickCounter = 0, extra = 3000) {
+var intervalCounter;
+var policeTimer;
+
+function caught () {
+    clearInterval(policeTimer);
+    clearScreen(300, ['chaserSpeech', 'anyText', 'msg'], 300); // not working for some reason (maybe disable interval?)
+    stopAudio('MoDemJams');
+    setTimeout(function () {
+        showLine('success', 50, 1);
+    }, 700);
+}
+
+function policeman (clickCounter, clickInterval, extra) {
+    if (clickCounter === 1) {
+        // insert audio hey freeze!
+        intervalCounter = 0;
+        showLine('FREEZE!', 50, 0, 1, 0, 'chaserSpeech');
+        $('.chaserSpeech').css({
+            'position'  :   'fixed',
+            'left'      :   intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+            'top'       :   '75%'
+        }).animate({
+            'opacity'   :   '0',
+            'left'      :   '-=10%'
+        }, 2000);
+
+        policeTimer = setInterval(function() {
+            intervalCounter += 1;
+            starredStep(intervalCounter, clickInterval, extra, '^', 5);
+        }, 250);
+    } else if (clickCounter === 15) {
+        showLine('BANG!', 50, 0, 1, 0, 'chaserSpeech');
+        $('.chaserSpeech').css({
+            'position'  :   'fixed',
+            'left'      :   intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+            'top'       :   '75%'
+        }).animate({
+            'opacity'   :   '0',
+            'left'      :   '-=10px'
+        }, 2000);
+    }
+    return (intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
+}
+
+function freeClicking (starNum, starSizeArray, clickCounter = 0, extra = 10000) {
   $(document).one('mousedown', function (e) {
     playAudio('MoDemJams');
     $(document).unbind('contextmenu');
@@ -9,28 +53,58 @@ function freeClicking (clickCounter = 0, extra = 3000) {
     if (e.which === 1) {
         clickCounter += 1;
         starredStep(clickCounter, 100, extra);
+
+        var policePosition = policeman(clickCounter, 100, extra);
+        if(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) {
+            // $(document).unbind('contextmenu');
+            caught();
+        } else if (clickCounter > 115) {
+            caught();
+        } else {
         $(document).unbind('contextmenu.prevention');
         $(document).bind('contextmenu', function (e) {
           e.preventDefault();
 
           clickCounter += 1;
           starredStep(clickCounter, 100, extra);
-          freeClicking(clickCounter);
+          for (var i = 0; i < starNum; i++) {
+              $('#star' + i).animate({
+                  'left'    :   '-=' + starSizeArray[i] * 0.05 + '%'
+              }, 750, 'linear');
+          }
+          if(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) {
+            //   $(document).unbind('contextmenu');
+              caught();
+          } else if (clickCounter > 115) {
+              caught();
+          } else {
+              freeClicking(starNum, starSizeArray, clickCounter);
+          }
           return false;
         });
+    }
     } else {
-        freeClicking(clickCounter);
+        freeClicking(starNum, starSizeArray, clickCounter);
     }
     });
  }
 
-function nowRun() {
-  clearScreen(300, ['.animElem', '.anyText'], 300);
+function nowRun(clickCounter) {
+    for (var i = 0; i < clickCounter; i++) {
+        clearInterval(intId[i])
+    }
+  clearScreen(300, ['.animElem', '.anyText', 'starField'], 300);
   stopAudio('einstein');
   addAudio('MoDemJams', './audio/MoDemJams.webm', 12);
+  var starNum = $(window).width() * $(window).height() * 1.0e-5;
+  var starSizeArray = [];
+  for (var i = 0; i < starNum; i++) {
+    starSizeArray[i] = randomStars(i);
+    fadeloop ('#star' + i, 1400, 1000, true, starNum);
+  }
   setTimeout(function () {
     showLine('Oh, it was running', 100, 1);
-    freeClicking();
+    freeClicking(starNum, starSizeArray);
   }, 600);
 }
 
@@ -47,15 +121,15 @@ function walkFaster (clickInterval, audioInterval, leftClickTimer, rightClickTim
   }, 1200);
 }
 
-function starredStep (clickCounter, clickInterval, extra = 0) {
+function starredStep (clickCounter, clickInterval, extra = 0, text = '*', offset = 1) {
     var stepStar = document.createElement('div');
     $(stepStar).css({
       'display'  : 'block',
       'position' : 'absolute',
-      'left'     : clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+      'left'     : clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - (offset * $(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
       'bottom'   : '2%',
       'font-size': ($(window).width() / (1700 - clickInterval)) * 20 + 'px'
-    }).appendTo('body').html('*').attr('class', 'anyText').attr('id', 'starStep' + clickCounter).animate({
+  }).appendTo('body').html(text).attr('class', 'anyText').attr('id', 'starStep' + clickCounter).animate({
       'opacity': '0',
       'bottom': '7%',
       'font-size': '+=20px'
@@ -76,7 +150,9 @@ function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightCli
         gainControl.gain.value = 1;
 
         clickCounter += 1;
-        starredStep(clickCounter, clickInterval);
+        randomStars(clickCounter);
+        fadeloop ('#star' + clickCounter, 1400, 1000, true, clickCounter);
+        // starredStep(clickCounter, clickInterval);
 
         var rightReverbTimer, leftReverbTimer;
         clearTimeout(rightClickTimer);
@@ -112,7 +188,9 @@ function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightCli
           gainControl.gain.value = 1;
 
           clickCounter += 1;
-          starredStep(clickCounter, clickInterval);
+          randomStars(clickCounter);
+          fadeloop ('#star' + clickCounter, 1400, 1000, true, clickCounter);
+        //   starredStep(clickCounter, clickInterval);
 
           clearTimeout(leftClickTimer);
           clearTimeout(leftReverbTimer);
@@ -146,7 +224,7 @@ function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightCli
               clearTimeout(rightClickTimer);
 
               if (next === 1) {
-                nowRun();
+                nowRun(clickCounter);
                 return false;
               } else {
                 walkFaster(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl);
@@ -415,7 +493,6 @@ function scene1starter () {
 
 
 $(document).ready(function () {
-
   setTimeout(function () {
     showLine('Welcome to Moon Prison.', 50, 1);
     showLine('This is your cell.', 50);
