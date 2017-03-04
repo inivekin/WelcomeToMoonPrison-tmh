@@ -42,7 +42,7 @@ function policeman (clickCounter, clickInterval, extra) {
     return (intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
 }
 
-function freeClicking (starNum, starSizeArray, clickCounter = 0, extra = 10000) {
+function freeClicking (starSizeArray, clickCounter = 0, extra = 10000) {
   $(document).one('mousedown', function (e) {
     playAudio('MoDemJams');
     $(document).unbind('contextmenu');
@@ -56,7 +56,6 @@ function freeClicking (starNum, starSizeArray, clickCounter = 0, extra = 10000) 
 
         var policePosition = policeman(clickCounter, 100, extra);
         if(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) {
-            // $(document).unbind('contextmenu');
             caught();
         } else if (clickCounter > 115) {
             caught();
@@ -67,44 +66,36 @@ function freeClicking (starNum, starSizeArray, clickCounter = 0, extra = 10000) 
 
           clickCounter += 1;
           starredStep(clickCounter, 100, extra);
-          for (var i = 0; i < starNum; i++) {
-              $('#star' + i).animate({
-                  'left'    :   '-=' + starSizeArray[i] * 0.05 + '%'
-              }, 750, 'linear');
-          }
+
           if(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) {
             //   $(document).unbind('contextmenu');
               caught();
           } else if (clickCounter > 115) {
               caught();
           } else {
-              freeClicking(starNum, starSizeArray, clickCounter);
+              freeClicking(starSizeArray, clickCounter);
           }
           return false;
         });
     }
     } else {
-        freeClicking(starNum, starSizeArray, clickCounter);
+        freeClicking(starSizeArray, clickCounter);
     }
     });
  }
 
 function nowRun(clickCounter) {
-    for (var i = 0; i < clickCounter; i++) {
+    for (var i = 0; i < clickCounter + 1; i++) {
         clearInterval(intId[i])
+        $('#star' + i).remove()
     }
   clearScreen(300, ['.animElem', '.anyText', 'starField'], 300);
   stopAudio('einstein');
   addAudio('MoDemJams', './audio/MoDemJams.webm', 12);
-  var starNum = $(window).width() * $(window).height() * 1.0e-5;
   var starSizeArray = [];
-  for (var i = 0; i < starNum; i++) {
-    starSizeArray[i] = randomStars(i);
-    fadeloop ('#star' + i, 1400, 1000, true, starNum);
-  }
   setTimeout(function () {
     showLine('Oh, it was running', 100, 1);
-    freeClicking(starNum, starSizeArray);
+    freeClicking(starSizeArray);
   }, 600);
 }
 
@@ -151,8 +142,7 @@ function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightCli
 
         clickCounter += 1;
         randomStars(clickCounter);
-        fadeloop ('#star' + clickCounter, 1400, 1000, true, clickCounter);
-        // starredStep(clickCounter, clickInterval);
+        fadeloop ('#star' + clickCounter, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2), clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2), true, clickCounter);
 
         var rightReverbTimer, leftReverbTimer;
         clearTimeout(rightClickTimer);

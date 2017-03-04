@@ -174,7 +174,7 @@ function switchOnClick (conditionArray, fadeTargetArray, messageArray, callToFun
 function answerActive(answer, option) {
     console.log(answer);
     if($(answer).css('opacity') > 0) {
-    $('<span id="selector">_</span>').insertBefore($(answer).children(":first-child")); // FIXME for some reason a shitload of underscores a spawned if only the underscore if hovered over
+    $('<span id="selector" class="anyText">_</span>').insertBefore($(answer).children(":first-child"));
     }
 }
 
