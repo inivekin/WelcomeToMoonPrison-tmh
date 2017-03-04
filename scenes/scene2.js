@@ -47,7 +47,6 @@ function scene2Question1()
 function scene2Correct1()
 {
   clearScreen(0, ['.selectable'], 0);
-  $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
   playAudio('forestImpression');
   pushFloatingTextQueue(0, 10, "I love climbing", 1500, 2000, null, 2000);
   pushFloatingTextQueue(0, 20, "And I love trees", 1500, 2000, null, 2000);
@@ -62,7 +61,6 @@ function scene2Correct1()
 function scene2Incorrect1()
 {
   clearScreen(0, ['.selectable'], 0);
-  $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
   playAudio('forestImpression');
   pushFloatingTextQueue(0, 10, "You’re not made up of all your problems!", 1500, 2000, null, 2000);
   pushFloatingTextQueue(0, 20, "Even if you could solve them,", 1500, 2000, null, 2000);
@@ -89,7 +87,6 @@ function scene2Question2()
 function scene2Correct2()
 {
   clearScreen(0, ['.selectable'], 0);
-  $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
   playAudio('forestImpression');
   pushFloatingTextQueue(0, 10, "Freedom’s not something that you say, it’s", 1500, 2000, null, 2000);
   pushFloatingTextQueue(0, 20, "Living with your mistakes, it’s", 1500, 2000, null, 2000);
@@ -117,7 +114,6 @@ function scene2Question3Correct()
 function scene2Incorrect2()
 {
   clearScreen(0, ['.selectable'], 0);
-  $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
   playAudio('forestImpression');
   pushFloatingTextQueue(0, 10, "I see a man that is not ok, who,", 1500, 2000, null, 2000);
   pushFloatingTextQueue(0, 20, "Runs from his own mistakes, who", 1500, 2000, null, 2000);
@@ -145,7 +141,6 @@ function scene2Question3Incorrect()
 function scene2Correct3()
 {
   clearScreen(0, ['.selectable'], 0);
-  $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
   playAudio('forestImpression');
   pushFloatingTextQueue(0, 10, "Stay then,", 1500, 2000, null, 2000);
   pushFloatingTextQueue(0, 20, "It’s okay then", 1500, 2000, null, 2000);
@@ -154,14 +149,13 @@ function scene2Correct3()
   pushFloatingTextQueue(0, 50, "Then you can stay and then", 1500, 2000, null, 2000);
   pushFloatingTextQueue(0, 60, "Stay then", 1500, 2000, null, 2000);
   
-  this.queueFinishFunc = null;
+  this.queueFinishFunc = scene2TearDown;
   runFloatingTextQueue();
 }
 
 function scene2Incorrect3()
 {
   clearScreen(0, ['.selectable'], 0);
-  $('#ansDiv').empty(); // FIXME this doesn't seem like the best way to do this - search scene 1 for better fix
   playAudio('forestImpression');
   pushFloatingTextQueue(0, 10, "Escape then", 1500, 2000, null, 2000);
   pushFloatingTextQueue(0, 20, "Go ‘head we’re waiting", 1500, 2000, null, 2000);
@@ -169,7 +163,7 @@ function scene2Incorrect3()
   pushFloatingTextQueue(0, 40, "So awfully patient", 1500, 2000, null, 2000);
   pushFloatingTextQueue(0, 50, "So thank you for not going anywhere", 1500, 2000, null, 2000);
   
-  this.queueFinishFunc = null;
+  this.queueFinishFunc = scene2TearDown;
   runFloatingTextQueue();
 }
 
@@ -188,7 +182,7 @@ function pushFloatingTextQueue(left, top, text, fadeInDur, delayDur, fadeOutDur,
 
 function runFloatingTextQueue()
 {
-  if(this.floatingTextQueue.length > 0)
+  if(this.floatingTextQueue && this.floatingTextQueue.length > 0)
   {
     var queueObject = this.floatingTextQueue.shift();
     var floatingDiv = document.createElement('div');
@@ -208,11 +202,8 @@ function runFloatingTextQueue()
   }
   else
   {
-    // Done processing queue, do cleanup and move on to next scene
+    // Done processing queue, do cleanup and move on to next screen
     clearFloatingText();
-    // TODO put the next 2 lines somewhere at end of scene for general hygiene
-    // this.floatingTextQueue = null;
-    // this.queueFinishFunc = null;
     if(this.queueFinishFunc)
     {
       this.queueFinishFunc();
@@ -224,4 +215,13 @@ function runFloatingTextQueue()
 function clearFloatingText()
 {
   $('body').remove('.scene2FloatText');
+}
+
+function scene2TearDown()
+{
+  this.floatingTextQueue = null;
+  this.queueFinishFunc = null;
+  // TODO a bunch of calls to removeAudio here after we work in the
+  // new clips, possibly on a setTimeout func or something that waits
+  // until audio is done playing
 }
