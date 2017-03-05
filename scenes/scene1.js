@@ -4,7 +4,6 @@ var policeTimer;
 function caught () {
     clearInterval(policeTimer);
     clearScreen(300, ['.chaserSpeech', '.anyText', '.msg'], 300); // not working for some reason (maybe disable interval?)
-    stopAudio('MoDemJams');
     setTimeout(function () {
         showLine('To be continued...', 50, 1);
     }, 700);
@@ -42,15 +41,39 @@ function policeman (clickCounter, clickInterval, extra) {
     return (intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
 }
 
-function nowRun(totalClicks, extra = 10000, clickCounter = 0, policePosition = -1) {
+function nowRun(bufferList, extra = 10000, clickCounter = 0, policePosition = -1) {
     clearScreen(0, ['.animElem', '.anyText', '.starField', '.msg'], 0);
-  addAudio('MoDemJams', './audio/MoDemJams.webm', 12);
+    var tuna = new Tuna(context);
+    var filter = new tuna.Filter({
+        frequency: 4000, //20 to 22050
+        Q: 1, //0.001 to 100
+        gain: 0, //-40 to 40 (in decibels)
+        filterType: "lowpass", //lowpass, highpass, bandpass, lowshelf, highshelf, peaking, notch, allpass
+        bypass: 0
+    });
+    var source = context.createBufferSource();
+    source.buffer = bufferList[0];
+    var gainControl = context.createGain();
+    var gainFilter = context.createGain();
+
+    source.connect(filter);
+    filter.connect(gainFilter);
+    gainFilter.connect(context.destination);
+    source.connect(gainControl);
+    gainControl.connect(context.destination);
+    gainFilter.gain.value = 0.5;
+    gainControl.gain.value = 0;
+
+    source.start(0, 12);
 
   setTimeout(function () {
     showLine('Oh, it was running', 100, 1);
     alternateClicks(0, 0, [
         function () {
-            $('#MoDemJams').get(0).play();
+            if (clickCounter === 0) {
+                gainControl.gain.value = 1;
+                filter.disconnect();
+            }
             clickCounter += 1;
             starredStep(clickCounter, 100, extra);
             policePosition = policeman(clickCounter, 100, extra);
@@ -62,11 +85,24 @@ function nowRun(totalClicks, extra = 10000, clickCounter = 0, policePosition = -
         function () {},
         function () {},
         function (){
+            source.stop();
             caught();
         }], function () {
             return Boolean(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) || (clickCounter > 115);
         });
   }, 700);
+}
+
+function nowRunAudio () {
+    bufferLoader = new BufferLoader(
+        context,
+        [
+            '../audio/MoDemJams.webm'
+        ],
+        nowRun
+    );
+
+    bufferLoader.load();
 }
 
 function starredStep (clickCounter, clickInterval, extra = 0, text = '*', offset = 1) {
@@ -178,7 +214,6 @@ function slowWalk(clickInterval, audioInterval, eotb, animElements, playing = fa
                                         eotb['source'].connect(eotb['gainControl']);
                                 },
                                 function (){                                                              // on reaching click goal (defined by condition)
-                                    var totalClicks;
                                     clearScreen(300, ['.msg'], 300);
                                     $('.animElements').fadeTo(500, 0);
                                     $('#instructorRight').fadeTo(500, 0);
@@ -191,9 +226,8 @@ function slowWalk(clickInterval, audioInterval, eotb, animElements, playing = fa
                                           totalClicks = clickCounter;
                                           slowWalk(300, 700, eotb, animElements, true);
                                       } else {
-                                          totalClicks += clickCounter;
                                           eotb['source'].stop();
-                                          nowRun(totalClicks);
+                                          nowRunAudio();
                                       }
                                     }, 1200);
                                 }], function () {
@@ -287,8 +321,7 @@ function createClickIndicators() {
 }
 
 function scene1Audio (bufferList) {
-    window.AudioContext = window.AudioContext || window.webkitAudioContext;
-    context = new AudioContext();
+
     var tuna = new Tuna(context);
     var source = context.createBufferSource();
     var gainControl = context.createGain();
@@ -326,15 +359,11 @@ function scene1Audio (bufferList) {
 }
 
 function startWalking () {
-  addAudio('einstein', './audio/EOTB.ogg', 22);
   showLine('That\'s right...', 50, 1);
   showLine('It wasn\'t just munching...', 50);
   showLine('There was also something else...', 50);
 
-
   // Audio dealings
-  var context = new AudioContext();
-
   bufferLoader = new BufferLoader(
       context,
       [
@@ -367,9 +396,10 @@ function munchResult (result) {
   }
 }
 
-function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
+function starveRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
   var starveInterval = [],
-      starveCounter = 0;
+      starveCounter = 0,
+      intervalStarted = false;
 
       starveTimer = setTimeout(function () {
         munchCounter = 0;
@@ -386,7 +416,9 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
       }
 
       var audioTimer = setTimeout(function () {
-        restartAudio('starvingEffect', starveCounter);
+          munchingAudio['starveSource'].connect(context.destination);
+          munchingAudio['starveSource'].start(0, starveCounter);
+          intervalStarted = true;
 
           starveInterval[munchTotal] = setInterval(function () {
             starveCounter += 1;
@@ -396,7 +428,7 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
               for (var i = 0; i < munchTotal + 1; i++) {
                 clearInterval(starveInterval[i]);
               }
-              stopAudio('starvingEffect');
+              munchingAudio['starveSource'].stop();
               munchResult(0);
             }
         }, 1000);
@@ -407,13 +439,17 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
       for (var i = 0; i < munchTotal + 1; i++) {
         clearInterval(starveInterval[i]);
       }
-      stopAudio('starvingEffect');
+      if (intervalStarted) {
+            munchingAudio['starveSource'].stop();                                     // ignore this if audio hasn't started
+            munchingAudio['starveSource'] = context.createBufferSource();
+            munchingAudio['starveSource'].buffer = munchingAudio['bufferList'][17];
+      }
       clearTimeout(starveTimer);
-      munchPress (e, audioTimer, munchCounter, munchTotal, starveTimer, starveInterval);
+      munchPress (e, munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveInterval);
     });
 }
 
-function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
+function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
     if (e.which === 32) {
       var stop = 0;
       clearTimeout(audioTimer);
@@ -429,18 +465,43 @@ function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
       var j = Math.floor(Math.random() * 5);
 
       if (munchCounter === 1) {
-          playAudio('munchEffect' + k);
+          console.log('munchSource' + k);
+          munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
+          munchingAudio['gainMunchControl'].connect(context.destination);
+          munchingAudio['gainMunchControl'].gain.value = 1 - munchTotal / 50
+          munchingAudio['munchSource' + k].connect(munchingAudio['overdrive']);
+          munchingAudio['overdrive'].connect(munchingAudio['gainMunchOverdrive']);
+          munchingAudio['gainMunchOverdrive'].connect(context.destination);
+          munchingAudio['gainMunchOverdrive'].gain.value = munchTotal / 50;
+          munchingAudio['munchSource' + k].start(0);
+          munchingAudio['munchSource' + k] = context.createBufferSource();
+          munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k]
+          console.log(munchingAudio['bufferList'][k]);
       }
 
-      if (munchCounter === 2) {                         // TODO just improve the implementation
-          playAudio('crunchEffect' + j);
+      if (munchCounter === 2) {
+          munchingAudio['crunchSource' + j].connect(context.destination)
+          munchingAudio['crunchSource' + j].start(0);
+          munchingAudio['crunchSource' + j] = context.createBufferSource();
+          munchingAudio['crunchSource' + j].buffer = munchingAudio['bufferList'][7 + j]
       }
       if ((munchCounter === 3) && (munchTotal % 2 === 0)) {
         if (Math.random() > 0.5) {
-          playAudio('gruntEffect' + j);
-          console.log('playing grunt');
+            munchingAudio['gruntSource' + j].connect(context.destination)
+            munchingAudio['gruntSource' + j].start(0);
+            munchingAudio['gruntSource' + j] = context.createBufferSource();
+            munchingAudio['gruntSource' + j].buffer = munchingAudio['bufferList'][12 + j]
         }
         munchCounter = 0;
+      }
+      if (munchTotal > 9) {
+          if (munchTotal === 10) {
+              munchingAudio['chantSource'].connect(munchingAudio['gainChantControl']);
+              munchingAudio['gainChantControl'].connect(context.destination);
+              munchingAudio['chantSource'].start(0);
+          }
+          munchingAudio['gainChantControl'].gain.value = munchTotal / 50;
+          munchingAudio['chantSource'].playbackRate.value = 1 - munchTotal / 300;
       }
       if (munchTotal > 50) {
         clearTimeout(starveTimer);
@@ -452,14 +513,65 @@ function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
       }
       if (!stop) {
         $(document).one('keyup', function (e) {
-        starveRelease(audioTimer, munchCounter, munchTotal, munchTotal, starveTimer, starveInterval);
+        starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, munchTotal, starveTimer, starveInterval);
       });
       }
+  } else {
+      $(document).one('keyup', function (e) {
+      starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, munchTotal, starveTimer, starveInterval);
+  });
   }
 }
 
+function munchingAudio(bufferList) {
+    var tuna = new Tuna(context);
+    munchingAudio = {};
+    for (var i = 0; i < 7; i++) {
+        munchingAudio['munchSource' + i] = context.createBufferSource();
+        munchingAudio['munchSource' + i].buffer = bufferList[i];
+    }
+    for (var j = 0; j < 5; j++) {
+        munchingAudio['crunchSource' + j] = context.createBufferSource();
+        munchingAudio['crunchSource' + j].buffer = bufferList[j + 7];
+        munchingAudio['gruntSource' + j] = context.createBufferSource();
+        munchingAudio['gruntSource' + j].buffer = bufferList[j + 12];
+    }
+    munchingAudio['starveSource'] = context.createBufferSource();
+    munchingAudio['starveSource'].buffer = bufferList[17];
+
+    munchingAudio['chantSource'] = context.createBufferSource();
+    munchingAudio['chantSource'].buffer = bufferList[18];
+    munchingAudio['gainChantControl'] = context.createGain();
+
+    munchingAudio['gainMunchOverdrive'] = context.createGain();
+    munchingAudio['gainMunchControl'] = context.createGain();
+
+    var overdrive = new tuna.Overdrive({
+    outputGain: 0.5,         //0 to 1+
+    drive: 0.7,              //0 to 1
+    curveAmount: 1,          //0 to 1
+    algorithmIndex: 0,       //0 to 5, selects one of our drive algorithms
+    bypass: 0
+    });
+
+    var convolver = new tuna.Convolver({
+    highCut: 10000,                         //20 to 22050
+    lowCut: 20,                             //20 to 22050
+    dryLevel: 1,                            //0 to 1+
+    wetLevel: 1,                            //0 to 1+
+    level: 1,                               //0 to 1+, adjusts total output of both wet and dry
+    impulse: "./audio/impulses/PrimeShort.wav",    //the path to your impulse response
+    bypass: 0
+});
+
+    munchingAudio['overdrive'] = convolver;
+
+    munchingAudio['bufferList'] = bufferList;
+    starveRelease(munchingAudio);
+}
+
 function munchingTime () {
-  clearScreen(0, ['.selectable', '.msg', '.pBreaks'], 200);
+  clearScreen(0, ['.selectable', '.msg'], 200);
   stopAudio('shiryu8');
   setTimeout(function () {
     showLine('You think.', 50, 1);
@@ -469,21 +581,34 @@ function munchingTime () {
     showLine('Nothing but... munching...', 100);
     showLine('Press [SPACEBAR] to munch', 50, 0, 0, 100, 'afterMessageInstruct');
 
-
+    var munchingEffects = [];
     for (var i = 0; i < 7; i++) {
-      addAudio('munchEffect' + i, './audio/munching/munch' + i + '.mp3');
+      munchingEffects.push('../audio/munching/munch' + i + '.mp3');
     }
     for (var j = 0; j < 5; j++) {
-      addAudio('crunchEffect' + j, './audio/munching/crunch' + j + '.mp3');
+      munchingEffects.push('../audio/munching/crunch' + j + '.mp3');
     }
     for (var k = 0; k < 5; k++) {
-      addAudio('gruntEffect' + k, './audio/munching/grunt' + k + '.mp3');
+        munchingEffects.push('../audio/munching/grunt' + k + '.mp3');
     }
-    addAudio('starvingEffect', './audio/munching/starvation.mp3');
+    munchingEffects.push('../audio/munching/starvation.mp3');
+    munchingEffects.push('../audio/munching/chorus.mp3');
 
-    setTimeout(function () {
-      starveRelease();
-    }, 5500);
+    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+    context = new AudioContext();
+
+    console.log(munchingEffects);
+
+    var bufferLoader = new BufferLoader(
+        context,
+        munchingEffects,
+        munchingAudio
+    );
+
+    bufferLoader.load();
+    // setTimeout(function () {
+    //   starveRelease();
+    // }, 5500);
   }, 400);
 }
 
@@ -522,6 +647,9 @@ function scene1starter () {
 
 
 $(document).ready(function () {
+
+    var context = new AudioContext();
+
       setTimeout(function () {
         showLine('Welcome to Moon Prison.', 50, 1);
         showLine('This is your cell.', 50);
