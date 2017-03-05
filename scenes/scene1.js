@@ -44,11 +44,6 @@ function policeman (clickCounter, clickInterval, extra) {
 
 function nowRun(totalClicks, extra = 10000, clickCounter = 0, policePosition = -1) {
     clearScreen(0, ['.animElem', '.anyText', '.starField', '.msg'], 0);
-    // for (var i = 0; i < totalClicks; i++) {
-    //     clearInterval(intId[i]);
-    //     $('#star' + i).remove();
-    // }
-  stopAudio('einstein');
   addAudio('MoDemJams', './audio/MoDemJams.webm', 12);
 
   setTimeout(function () {
@@ -93,9 +88,11 @@ function starredStep (clickCounter, clickInterval, extra = 0, text = '*', offset
 }
 
 function switchGains(gainNodeArray, toggleArray) {
-    console.log('switching gains');
     for (var i = 0; i < gainNodeArray.length; i++) {
         gainNodeArray[i].gain.value = toggleArray[i];
+        console.log('switched gains');
+        console.log(gainNodeArray[i]);
+        console.log(gainNodeArray[i].gain.value);
     }
 }
 
@@ -122,45 +119,63 @@ function animateClickIndicator (click, animElements, clickInterval, audioInterva
   }
 }
 
-function audioTimeout (id) {
-    console.log('audio timeout');
-    setTimeout(function (){
-        stopAudio(id);
-    },0);
+function audioTimeout (audio, offset, startedAt) {
+    elapsed = (context.currentTime - startedAt).toFixed(1);                                                 // TODO maybe implement the pausing and starting as its own functions?
+    audio['source'].stop();
+    console.log('stopped: ' + offset);
+    return elapsed;
 }
 
-function slowWalk(clickInterval, audioInterval, gainConvolver, gainControl, animElements, condition = 0, clickCounter = 0) {
+function slowWalk(clickInterval, audioInterval, eotb, animElements, playing = false, condition = 0, clickCounter = 0, offset = 22) {
     var exactInt = clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2);
     alternateClicks(clickInterval, audioInterval, [
                                 function () {
-                                    switchGains([gainConvolver, gainControl],[0,1]);             // at left click
+                                    switchGains([eotb['gainConvolver'], eotb['gainControl']],[0,1]);             // at left click
                                     randomStars(clickCounter);
                                     fadeloop('#star' + clickCounter, exactInt, exactInt, true, clickCounter);
                                     animateClickIndicator('left', animElements, clickInterval, audioInterval);
-                                    if(($('#einstein').get(0).paused)) {
-                                      $('#einstein').get(0).play();
+                                    if (!playing) {
+                                        console.log('left click: ' + offset);
+                                        eotb['source'].start(0, offset);                                        // TODO add a amll fade in to the start of the audio?
+                                        playing = true;
+                                        startedAt = context.currentTime - offset;
                                     }
                                     clickCounter += 1;
                                     condition = (clickCounter > ((1700 - clickInterval) / 100));
                                 },
                                 function () {
-                                    switchGains([gainConvolver, gainControl],[0,1]);             // at right click
+                                    switchGains([eotb['gainConvolver'], eotb['gainControl']],[0,1]);             // at right click
                                     randomStars(clickCounter);
                                     fadeloop('#star' + clickCounter, exactInt, exactInt, true, clickCounter);
                                     animateClickIndicator('right', animElements, clickInterval, audioInterval);
-                                    if(($('#einstein').get(0).paused)) {
-                                      $('#einstein').get(0).play();
+                                    if (!playing) {
+                                        console.log('right click: ' + offset);
+                                        eotb['source'].start(0, offset);
+                                        playing = true;
+                                        startedAt = context.currentTime - offset;
                                     }
                                     clickCounter += 1;
                                     condition = (clickCounter > ((1700 - clickInterval) / 100));
                                 },
                                 function () {
-                                    switchGains([gainConvolver, gainControl],[0,1]);            // at failed left click
-                                    audioTimeout('einstein');
+                                    switchGains([eotb['gainConvolver'], eotb['gainControl']],[1,0]);            // at failed left click
+                                        offset = audioTimeout(eotb, offset, startedAt);
+                                        playing = false;
+
+                                        eotb['source'] = context.createBufferSource();
+                                        eotb['source'].buffer = eotb['bufferList'][0];
+                                        eotb['source'].connect(eotb['convolver']);
+                                        eotb['source'].connect(eotb['gainControl']);
                                 },
                                 function () {
-                                    switchGains([gainConvolver, gainControl],[0,1]);            // at failed right click
-                                    audioTimeout('einstein');
+                                    switchGains([eotb['gainConvolver'], eotb['gainControl']],[1,0]);            // at failed right click
+                                        offset = audioTimeout(eotb, offset, startedAt);
+                                        playing = false;
+
+                                        eotb['source'] = context.createBufferSource();
+                                        eotb['source'].buffer = eotb['bufferList'][0];
+                                        eotb['source'].connect(eotb['convolver']);
+                                        eotb['source'].connect(eotb['gainControl']);
                                 },
                                 function (){                                                              // on reaching click goal (defined by condition)
                                     var totalClicks;
@@ -174,9 +189,10 @@ function slowWalk(clickInterval, audioInterval, gainConvolver, gainControl, anim
                                       if (clickInterval !== 300) {
                                           showLine('What was it?', 50, 1);
                                           totalClicks = clickCounter;
-                                          slowWalk(300, 700, gainConvolver, gainControl, animElements, 0);
+                                          slowWalk(300, 700, eotb, animElements, true);
                                       } else {
                                           totalClicks += clickCounter;
+                                          eotb['source'].stop();
                                           nowRun(totalClicks);
                                       }
                                     }, 1200);
@@ -270,6 +286,45 @@ function createClickIndicators() {
     return animElements;
 }
 
+function scene1Audio (bufferList) {
+    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+    context = new AudioContext();
+    var tuna = new Tuna(context);
+    var source = context.createBufferSource();
+    var gainControl = context.createGain();
+    var gainConvolver = context.createGain();
+
+    var convolver = new tuna.Convolver({
+    highCut: 10000,                         // 20 to 22050
+    lowCut: 20,                             // 20 to 22050
+    dryLevel: 1,                            // 0 to 1+
+    wetLevel: 1,                            // 0 to 1+
+    level: 1,                               // 0 to 1+, adjusts total output of both wet and dry
+    impulse: './audio/impulses/PrimeLong.wav',    // the path to your impulse response
+    bypass: 0
+    });
+
+    var eotb = {};
+    eotb['source'] = source;
+    eotb['convolver'] = convolver;
+    eotb['gainControl'] = gainControl;
+    eotb['gainConvolver'] = gainConvolver;
+    eotb['bufferList'] = bufferList;
+
+    source.buffer = bufferList[0];
+
+    source.connect(gainControl);
+    source.connect(convolver);
+    convolver.connect(gainConvolver);
+    gainConvolver.connect(context.destination);
+    gainControl.connect(context.destination);
+
+      setTimeout(function () {
+          var animElements = createClickIndicators();
+          slowWalk(900, 1400, eotb, animElements);
+      }, 2500);
+}
+
 function startWalking () {
   addAudio('einstein', './audio/EOTB.ogg', 22);
   showLine('That\'s right...', 50, 1);
@@ -279,33 +334,16 @@ function startWalking () {
 
   // Audio dealings
   var context = new AudioContext();
-  var tuna = new Tuna(context);
-  var audio = $('#einstein').get(0);
-  var source = context.createMediaElementSource(audio);
-  var gainControl = context.createGain();
-  var gainConvolver = context.createGain();
 
+  bufferLoader = new BufferLoader(
+      context,
+      [
+          '../audio/EOTB.ogg'
+      ],
+      scene1Audio
+  );
 
-  var convolver = new tuna.Convolver({
-  highCut: 10000,                         // 20 to 22050
-  lowCut: 20,                             // 20 to 22050
-  dryLevel: 1,                            // 0 to 1+
-  wetLevel: 1,                            // 0 to 1+
-  level: 1,                               // 0 to 1+, adjusts total output of both wet and dry
-  impulse: './audio/impulses/PrimeLong.wav',    // the path to your impulse response
-  bypass: 0
-  });
-
-  source.connect(gainControl);
-  source.connect(convolver);
-  convolver.connect(gainConvolver);
-  gainConvolver.connect(context.destination);
-  gainControl.connect(context.destination);
-
-    setTimeout(function () {
-        var animElements = createClickIndicators();
-        slowWalk(900, 1400, gainConvolver, gainControl, animElements);
-    }, 4500);
+  bufferLoader.load();
 }
 
 function munchResult (result) {

@@ -1,7 +1,7 @@
 $(document).ready(function () {
   addAudio('shiryu8', './audio/Shiryu8.ogg');
   $('#shiryu8').on('canplay', function () {
-    playAudio('shiryu8');
+    //playAudio('shiryu8');
 
 
     showLine('YOU\'VE DONE A TERRIBLE THING YOU CAN\'T REMEMBER.', 50, true, false, 750, 'openingText openingText1stLine');
