@@ -2,7 +2,9 @@ var intId = [];
 var stringArray = [];
 var newClassArray = [];
 var curLine = [];
-var screenBreakCheck = false;                          // evil globals to be removed
+var screenBreakCheck = false;
+var context;
+var bufferLoader;                          // evil globals to be removed
 
 /*
 screenPause parameter: time to pause before fadeTime - default 500
@@ -186,7 +188,7 @@ function switchOnClick (conditionArray, fadeTargetArray, messageArray, callToFun
 function answerActive(answer, option) {
     console.log(answer);
     if($(answer).css('opacity') > 0) {
-    $('<span id="selector">_</span>').insertBefore($(answer).children(":first-child")); // FIXME for some reason a shitload of underscores a spawned if only the underscore if hovered over
+    $('<span id="selector" class="anyText">_</span>').insertBefore($(answer).children(":first-child"));
     }
 }
 
@@ -268,6 +270,53 @@ function answerOptions (options, altOptions, optionCallbacks = false) {
   }, ansDel);
 }
 
+function BufferLoader(context, urlList, callback) {
+    console.log('loading buffer');
+  this.context = context;
+  this.urlList = urlList;
+  this.onload = callback;
+  this.bufferList = [];
+  this.loadCount = 0;
+}
+
+BufferLoader.prototype.loadBuffer = function(url, index) {
+  // Load buffer asynchronously
+  var request = new XMLHttpRequest();
+  request.open("GET", url, true);
+  request.responseType = "arraybuffer";
+
+  var loader = this;
+
+  request.onload = function() {
+    // Asynchronously decode the audio file data in request.response
+    loader.context.decodeAudioData(
+      request.response,
+      function(buffer) {
+        if (!buffer) {
+          alert('error decoding file data: ' + url);
+          return;
+        }
+        loader.bufferList[index] = buffer;
+        if (++loader.loadCount == loader.urlList.length)
+          loader.onload(loader.bufferList);
+      },
+      function(error) {
+        console.error('decodeAudioData error', error);
+      }
+    );
+    };
+
+    request.onerror = function() {
+        alert('BufferLoader: XHR error');
+    };
+
+    request.send();
+};
+
+BufferLoader.prototype.load = function() {
+  for (var i = 0; i < this.urlList.length; ++i)
+  this.loadBuffer(this.urlList[i], i);
+};
 
 var addAudio = function (id, location, startTime = 0) {
   var audio = document.createElement('audio');

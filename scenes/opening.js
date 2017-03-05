@@ -52,7 +52,7 @@ function loadOpening () {
 
 function randomStars (i) {
     var divSize = ((Math.random() * 22) + 6).toFixed();
-    $newdiv = $('<div/>').attr('id', 'star' + i).css({
+    $newdiv = $('<div/>').attr('id', 'star' + i).attr('class', 'starField').css({
         'font-size'   : divSize + 'px'
     });
     var viewportWidth = $(window).width();
@@ -70,6 +70,8 @@ function randomStars (i) {
         'top'         : posY + '%',
         'display'     : 'none'
     }).html('*').appendTo('body');
+
+    return $('#star' + i).css('font-size');
 }
 
 function fadeloop (star, timeOut, timeIn, loop, count) {

@@ -1,61 +1,119 @@
-function freeClicking (clickCounter = 0, extra = 3000) {
-  $(document).one('mousedown', function (e) {
-    playAudio('MoDemJams');
-    $(document).unbind('contextmenu');
-    $(document).bind('contextmenu.prevention', function (e) {
-      e.preventDefault();
-      return false;
-    });
-    if (e.which === 1) {
-        clickCounter += 1;
-        starredStep(clickCounter, 100, extra);
-        $(document).unbind('contextmenu.prevention');
-        $(document).bind('contextmenu', function (e) {
-          e.preventDefault();
+var intervalCounter;
+var policeTimer;
 
-          clickCounter += 1;
-          starredStep(clickCounter, 100, extra);
-          freeClicking(clickCounter);
-          return false;
-        });
-    } else {
-        freeClicking(clickCounter);
+function caught () {
+    clearInterval(policeTimer);
+    clearScreen(300, ['.chaserSpeech', '.anyText', '.msg'], 300); // not working for some reason (maybe disable interval?)
+    setTimeout(function () {
+        showLine('To be continued...', 50, 1);
+    }, 700);
+}
+
+function policeman (clickCounter, clickInterval, extra) {
+    if (clickCounter === 1) {
+        // insert audio hey freeze!
+        intervalCounter = 0;
+        showLine('FREEZE!', 50, 0, 1, 0, 'chaserSpeech');
+        $('.chaserSpeech').css({
+            'position'  :   'fixed',
+            'left'      :   intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+            'top'       :   '75%'
+        }).animate({
+            'opacity'   :   '0',
+            'left'      :   '-=10%'
+        }, 2000);
+
+        policeTimer = setInterval(function() {
+            intervalCounter += 1;
+            starredStep(intervalCounter, clickInterval, extra, '^', 5);
+        }, 250);
+    } else if (clickCounter === 15) {
+        showLine('BANG!', 50, 0, 1, 0, 'chaserSpeech');
+        $('.chaserSpeech').css({
+            'position'  :   'fixed',
+            'left'      :   intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+            'top'       :   '75%'
+        }).animate({
+            'opacity'   :   '0',
+            'left'      :   '-=10px'
+        }, 2000);
     }
-    });
- }
+    return (intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
+}
 
-function nowRun() {
-  clearScreen(300, ['.animElem', '.anyText'], 300);
-  stopAudio('einstein');
-  addAudio('MoDemJams', './audio/MoDemJams.webm', 12);
+function nowRun(bufferList, extra = 10000, clickCounter = 0, policePosition = -1) {
+    clearScreen(0, ['.animElem', '.anyText', '.starField', '.msg'], 0);
+    var tuna = new Tuna(context);
+    var filter = new tuna.Filter({
+        frequency: 4000, //20 to 22050
+        Q: 1, //0.001 to 100
+        gain: 0, //-40 to 40 (in decibels)
+        filterType: "lowpass", //lowpass, highpass, bandpass, lowshelf, highshelf, peaking, notch, allpass
+        bypass: 0
+    });
+    var source = context.createBufferSource();
+    source.buffer = bufferList[0];
+    var gainControl = context.createGain();
+    var gainFilter = context.createGain();
+
+    source.connect(filter);
+    filter.connect(gainFilter);
+    gainFilter.connect(context.destination);
+    source.connect(gainControl);
+    gainControl.connect(context.destination);
+    gainFilter.gain.value = 0.5;
+    gainControl.gain.value = 0;
+
+    source.start(0, 12);
+
   setTimeout(function () {
     showLine('Oh, it was running', 100, 1);
-    freeClicking();
-  }, 600);
+    alternateClicks(0, 0, [
+        function () {
+            if (clickCounter === 0) {
+                gainControl.gain.value = 1;
+                filter.disconnect();
+            }
+            clickCounter += 1;
+            starredStep(clickCounter, 100, extra);
+            policePosition = policeman(clickCounter, 100, extra);
+        },
+        function () {
+            clickCounter += 1;
+            starredStep(clickCounter, 100, extra);
+        },
+        function () {},
+        function () {},
+        function (){
+            source.stop();
+            caught();
+        }], function () {
+            return Boolean(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) || (clickCounter > 115);
+        });
+  }, 700);
 }
 
-function walkFaster (clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter = 0) {
-  clearScreen();
-  $('.animElements').fadeTo(500, 0);
-  $('#instructorRight').fadeTo(500, 0);
-  $('#instructorLeft').fadeTo(500, 0);
-  setTimeout(function () {
-    showLine('What was it?', 50, 1);
-    $('.animElements').fadeTo(500, 1);
-    $('#instructorLeft').fadeTo(500, 1);
-    alternateClicks(300, 700, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, 0, 1);
-  }, 1200);
+function nowRunAudio () {
+    bufferLoader = new BufferLoader(
+        context,
+        [
+            '../audio/MoDemJams.webm'
+        ],
+        nowRun
+    );
+
+    bufferLoader.load();
 }
 
-function starredStep (clickCounter, clickInterval, extra = 0) {
+function starredStep (clickCounter, clickInterval, extra = 0, text = '*', offset = 1) {
     var stepStar = document.createElement('div');
     $(stepStar).css({
       'display'  : 'block',
       'position' : 'absolute',
-      'left'     : clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+      'left'     : clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - (offset * $(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
       'bottom'   : '2%',
       'font-size': ($(window).width() / (1700 - clickInterval)) * 20 + 'px'
-    }).appendTo('body').html('*').attr('class', 'anyText').attr('id', 'starStep' + clickCounter).animate({
+  }).appendTo('body').html(text).attr('class', 'anyText').attr('id', 'starStep' + clickCounter).animate({
       'opacity': '0',
       'bottom': '7%',
       'font-size': '+=20px'
@@ -65,176 +123,256 @@ function starredStep (clickCounter, clickInterval, extra = 0) {
     }, 1100);
 }
 
-function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter = 0, next = 0) {
+function switchGains(gainNodeArray, toggleArray) {
+    for (var i = 0; i < gainNodeArray.length; i++) {
+        gainNodeArray[i].gain.value = toggleArray[i];
+        console.log('switched gains');
+        console.log(gainNodeArray[i]);
+        console.log(gainNodeArray[i].gain.value);
+    }
+}
+
+function animateClickIndicator (click, animElements, clickInterval, audioInterval) {
+    console.log('animating indicators');
+    if (click === 'left') {
+        for (var i = 0; i < (animElements[0].length + 3) / 4; i++) {
+          $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
+          $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * 0.5 * (clickInterval / 6), 0);
+        }
+        $('#instructorLeft').fadeTo(clickInterval / 6, 0);
+        setTimeout(function () {
+          $('#instructorRight').fadeTo(clickInterval / 2, 1);
+      }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
+  } else if (click === 'right') {
+      for (var j = 0; j < animElements[0].length / 2; j++) {
+        $('#animElem0span' + ((animElements[0].length + 3) / 4 - j - 1)).fadeTo(j * (clickInterval / 6) + audioInterval - clickInterval, 1);
+        $('#animElem0span' + ((animElements[0].length + 3) / 4 + j - 1)).fadeTo(j * 0.5 * (clickInterval / 6), 0);
+      }
+      $('#instructorRight').fadeTo(clickInterval / 6, 0);
+      setTimeout(function () {
+        $('#instructorLeft').fadeTo(clickInterval / 2, 1);
+    }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
+  }
+}
+
+function audioTimeout (audio, offset, startedAt) {
+    elapsed = (context.currentTime - startedAt).toFixed(1);                                                 // TODO maybe implement the pausing and starting as its own functions?
+    audio['source'].stop();
+    console.log('stopped: ' + offset);
+    return elapsed;
+}
+
+function slowWalk(clickInterval, audioInterval, eotb, animElements, playing = false, condition = 0, clickCounter = 0, offset = 22) {
+    var exactInt = clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2);
+    alternateClicks(clickInterval, audioInterval, [
+                                function () {
+                                    switchGains([eotb['gainConvolver'], eotb['gainControl']],[0,1]);             // at left click
+                                    randomStars(clickCounter);
+                                    fadeloop('#star' + clickCounter, exactInt, exactInt, true, clickCounter);
+                                    animateClickIndicator('left', animElements, clickInterval, audioInterval);
+                                    if (!playing) {
+                                        console.log('left click: ' + offset);
+                                        eotb['source'].start(0, offset);                                        // TODO add a amll fade in to the start of the audio?
+                                        playing = true;
+                                        startedAt = context.currentTime - offset;
+                                    }
+                                    clickCounter += 1;
+                                    condition = (clickCounter > ((1700 - clickInterval) / 100));
+                                },
+                                function () {
+                                    switchGains([eotb['gainConvolver'], eotb['gainControl']],[0,1]);             // at right click
+                                    randomStars(clickCounter);
+                                    fadeloop('#star' + clickCounter, exactInt, exactInt, true, clickCounter);
+                                    animateClickIndicator('right', animElements, clickInterval, audioInterval);
+                                    if (!playing) {
+                                        console.log('right click: ' + offset);
+                                        eotb['source'].start(0, offset);
+                                        playing = true;
+                                        startedAt = context.currentTime - offset;
+                                    }
+                                    clickCounter += 1;
+                                    condition = (clickCounter > ((1700 - clickInterval) / 100));
+                                },
+                                function () {
+                                    switchGains([eotb['gainConvolver'], eotb['gainControl']],[1,0]);            // at failed left click
+                                        offset = audioTimeout(eotb, offset, startedAt);
+                                        playing = false;
+
+                                        eotb['source'] = context.createBufferSource();
+                                        eotb['source'].buffer = eotb['bufferList'][0];
+                                        eotb['source'].connect(eotb['convolver']);
+                                        eotb['source'].connect(eotb['gainControl']);
+                                },
+                                function () {
+                                    switchGains([eotb['gainConvolver'], eotb['gainControl']],[1,0]);            // at failed right click
+                                        offset = audioTimeout(eotb, offset, startedAt);
+                                        playing = false;
+
+                                        eotb['source'] = context.createBufferSource();
+                                        eotb['source'].buffer = eotb['bufferList'][0];
+                                        eotb['source'].connect(eotb['convolver']);
+                                        eotb['source'].connect(eotb['gainControl']);
+                                },
+                                function (){                                                              // on reaching click goal (defined by condition)
+                                    clearScreen(300, ['.msg'], 300);
+                                    $('.animElements').fadeTo(500, 0);
+                                    $('#instructorRight').fadeTo(500, 0);
+                                    $('#instructorLeft').fadeTo(500, 0);
+                                    setTimeout(function () {
+                                      $('.animElements').fadeTo(500, 1);
+                                      $('#instructorLeft').fadeTo(500, 1);
+                                      if (clickInterval !== 300) {
+                                          showLine('What was it?', 50, 1);
+                                          totalClicks = clickCounter;
+                                          slowWalk(300, 700, eotb, animElements, true);
+                                      } else {
+                                          eotb['source'].stop();
+                                          nowRunAudio();
+                                      }
+                                    }, 1200);
+                                }], function () {
+                                    return Boolean(clickCounter > ((1700 - clickInterval) / 100) - 1);
+                                });
+}
+
+
+function alternateClicks (clickInterval, audioInterval, clickFunction, condition, leftClickTimer = 0, rightClickTimer = 0, clickCounter = 0) {
   $(document).one('mousedown', function (e) {
     $(document).bind('contextmenu', function (e) {
       e.preventDefault();
       return false;
     });
     if (e.which === 1) {
-        gainConvolver.gain.value = 0;
-        gainControl.gain.value = 1;
-
-        clickCounter += 1;
-        starredStep(clickCounter, clickInterval);
-
-        var rightReverbTimer, leftReverbTimer;
+        clickFunction[0]();
         clearTimeout(rightClickTimer);
-        clearTimeout(rightReverbTimer);
-
-      for (var i = 0; i < (animElements[0].length + 3) / 4; i++) {
-        $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
-        $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * 0.5 * (clickInterval / 6), 0);
-      }
-      $('#instructorLeft').fadeTo(clickInterval / 6, 0);
-      setTimeout(function () {
-        $('#instructorRight').fadeTo(clickInterval / 2, 1);
-    }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
-
-      if(($('#einstein').get(0).paused)) {
-        $('#einstein').get(0).play();
-      }
 
       leftClickTimer = setTimeout(function () {
-          gainConvolver.gain.value = 1;
-          gainControl.gain.value = 0;
-          setTimeout(function (){
-              stopAudio('einstein');
-          },0);
+        clickFunction[2]();
       }, audioInterval);
 
-      setTimeout(function () {
-        $(document).unbind('contextmenu');
-        $(document).bind('contextmenu', function (e) {
-          e.preventDefault();
-
-          gainConvolver.gain.value = 0;
-          gainControl.gain.value = 1;
-
-          clickCounter += 1;
-          starredStep(clickCounter, clickInterval);
-
+      if (condition()) {
           clearTimeout(leftClickTimer);
-          clearTimeout(leftReverbTimer);
-
-          if(($('#einstein').get(0).paused)) {
-            $('#einstein').get(0).play();
-          }
-
-          for (var i = 0; i < animElements[0].length / 2; i++) {
-            $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
-            $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * 0.5 * (clickInterval / 6), 0);
-          }
-
-          $('#instructorRight').fadeTo(clickInterval / 6, 0);
-          setTimeout(function () {
-            $('#instructorLeft').fadeTo(clickInterval / 2, 1);
-        }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
-
-          rightClickTimer = setTimeout(function () {
-              gainConvolver.gain.value = 1;
-              gainControl.gain.value = 0;
-              setTimeout(function (){
-                  stopAudio('einstein');
-              },0);
-          }, audioInterval);
-
+          clearTimeout(rightClickTimer);
+          clickFunction[4]();
+      } else {
           setTimeout(function () {
             $(document).unbind('contextmenu');
-            if (clickCounter > ((1700 - clickInterval) / 100)) {
+            $(document).bind('contextmenu', function (e) {
+              e.preventDefault();
+              clickFunction[1]();
               clearTimeout(leftClickTimer);
-              clearTimeout(rightClickTimer);
 
-              if (next === 1) {
-                nowRun();
+              rightClickTimer = setTimeout(function () {
+                clickFunction[3]();
+              }, audioInterval);
+
+              setTimeout(function () {
+                $(document).unbind('contextmenu');
+                if (condition()) {
+                  clearTimeout(leftClickTimer);
+                  clearTimeout(rightClickTimer);
+                  clickFunction[4]();
+                } else {
+                    alternateClicks (clickInterval, audioInterval, clickFunction, condition, leftClickTimer, rightClickTimer, clickCounter);
+                }
                 return false;
-              } else {
-                walkFaster(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl);
-                return false;
-              }
-            } else {
-              alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter, next);
-            }
-            return false;
+              }, clickInterval);
+            });
           }, clickInterval);
-        });
-      }, clickInterval);
-    //}
+      }
     } else {
-      alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter, next);
+        alternateClicks (clickInterval, audioInterval, clickFunction, condition, leftClickTimer, rightClickTimer, clickCounter);
     }
     return false;
   });
 }
 
+function createClickIndicators() {
+    var instructorLeft = document.createElement('span');
+    $('#txtDiv').append(instructorLeft);
+    $(instructorLeft).attr('class', 'anyText').html('[left click]').attr('id', 'instructorLeft').fadeIn(2000);
+
+
+    var animElements = ['* - - - - - _ - - - - - *'],
+        animElemSpans = [];
+    for (var i = 0; i < animElements.length; i++) {
+      animElemSpans[i] = document.createElement('span');
+      $(animElemSpans[i]).attr('id', 'animElem' + i);
+      $(animElemSpans[i]).attr('class', 'animElements');
+      $('#txtDiv').append(animElemSpans[i]);
+      showTextByWord('animElem', '#txtDiv', animElements[i], 0, 0, i);
+
+    }
+
+    var instructorRight = document.createElement('span');
+    $('#txtDiv').append(instructorRight);
+    $(instructorRight).attr('class', 'anyText').html('[right click]').attr('id', 'instructorRight');
+    $(instructorRight).css('opacity', '0');
+
+
+    for (var j = 0; j < (animElements[0].length + 1) / 2; j++) {
+      if (j === ((animElements[0].length + 3) / 4 - 1)) {
+        $('#animElem' + '0' + 'span' + j).fadeIn(2000);// .css('opacity', '1');
+      } else {
+        $('#animElem' + '0' + 'span' + j).css('opacity', '0');
+      }
+    }
+    return animElements;
+}
+
+function scene1Audio (bufferList) {
+
+    var tuna = new Tuna(context);
+    var source = context.createBufferSource();
+    var gainControl = context.createGain();
+    var gainConvolver = context.createGain();
+
+    var convolver = new tuna.Convolver({
+    highCut: 10000,                         // 20 to 22050
+    lowCut: 20,                             // 20 to 22050
+    dryLevel: 1,                            // 0 to 1+
+    wetLevel: 1,                            // 0 to 1+
+    level: 1,                               // 0 to 1+, adjusts total output of both wet and dry
+    impulse: './audio/impulses/PrimeLong.wav',    // the path to your impulse response
+    bypass: 0
+    });
+
+    var eotb = {};
+    eotb['source'] = source;
+    eotb['convolver'] = convolver;
+    eotb['gainControl'] = gainControl;
+    eotb['gainConvolver'] = gainConvolver;
+    eotb['bufferList'] = bufferList;
+
+    source.buffer = bufferList[0];
+
+    source.connect(gainControl);
+    source.connect(convolver);
+    convolver.connect(gainConvolver);
+    gainConvolver.connect(context.destination);
+    gainControl.connect(context.destination);
+
+      setTimeout(function () {
+          var animElements = createClickIndicators();
+          slowWalk(900, 1400, eotb, animElements);
+      }, 2500);
+}
+
 function startWalking () {
-  addAudio('einstein', './audio/EOTB.ogg', 22);
   showLine('That\'s right...', 50, 1);
   showLine('It wasn\'t just munching...', 50);
   showLine('There was also something else...', 50);
 
-
   // Audio dealings
-  var context = new AudioContext();
-  var tuna = new Tuna(context);
-  var audio = $('#einstein').get(0);
-  var source = context.createMediaElementSource(audio);
-  var gainControl = context.createGain();
-  var gainConvolver = context.createGain();
+  bufferLoader = new BufferLoader(
+      context,
+      [
+          '../audio/EOTB.ogg'
+      ],
+      scene1Audio
+  );
 
-
-  var convolver = new tuna.Convolver({
-  highCut: 10000,                         // 20 to 22050
-  lowCut: 20,                             // 20 to 22050
-  dryLevel: 1,                            // 0 to 1+
-  wetLevel: 1,                            // 0 to 1+
-  level: 1,                               // 0 to 1+, adjusts total output of both wet and dry
-  impulse: './audio/impulses/PrimeLong.wav',    // the path to your impulse response
-  bypass: 0
-  });
-
-  source.connect(gainControl);
-  source.connect(convolver);
-  convolver.connect(gainConvolver);
-  gainConvolver.connect(context.destination);
-  gainControl.connect(context.destination);
-
-  //$('#einstein').on('canplay', function () {
-    setTimeout(function () {
-      var instructorLeft = document.createElement('span');
-      $('#txtDiv').append(instructorLeft);
-      $(instructorLeft).attr('class', 'anyText').html('[left click]').attr('id', 'instructorLeft').fadeIn(2000);
-
-
-      var animElements = ['* - - - - - _ - - - - - *'],
-          animElemSpans = [];
-      for (var i = 0; i < animElements.length; i++) {
-        animElemSpans[i] = document.createElement('span');
-        $(animElemSpans[i]).attr('id', 'animElem' + i);
-        $(animElemSpans[i]).attr('class', 'animElements');
-        $('#txtDiv').append(animElemSpans[i]);
-        showTextByWord('animElem', '#txtDiv', animElements[i], 0, 0, i);
-
-      }
-
-      var instructorRight = document.createElement('span');
-      $('#txtDiv').append(instructorRight);
-      $(instructorRight).attr('class', 'anyText').html('[right click]').attr('id', 'instructorRight');
-      $(instructorRight).css('opacity', '0');
-
-
-      for (var j = 0; j < (animElements[0].length + 1) / 2; j++) {
-        if (j === ((animElements[0].length + 3) / 4 - 1)) {
-          $('#animElem' + '0' + 'span' + j).fadeIn(2000);// .css('opacity', '1');
-        } else {
-          $('#animElem' + '0' + 'span' + j).css('opacity', '0');
-        }
-      }
-      var leftClickTimer, rightClickTimer;
-
-      alternateClicks(900, 1400, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl);
-    }, 4500);
-  //});
+  bufferLoader.load();
 }
 
 function munchResult (result) {
@@ -243,9 +381,7 @@ function munchResult (result) {
   }
   for (var j = 0; j < 5; j++) {
     removeAudio('crunchEffect' + j, './audio/munching/crunch' + j + '.mp3');
-  }
-  for (var k = 0; k < 5; k++) {
-    removeAudio('gruntEffect' + k, './audio/munching/grunt' + k + '.mp3');
+    removeAudio('gruntEffect' + j, './audio/munching/grunt' + j + '.mp3');
   }
   removeAudio('starvingEffect', './audio/munching/starvation.mp3');
 
@@ -260,9 +396,10 @@ function munchResult (result) {
   }
 }
 
-function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
+function starveRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
   var starveInterval = [],
-      starveCounter = 0;
+      starveCounter = 0,
+      intervalStarted = false;
 
       starveTimer = setTimeout(function () {
         munchCounter = 0;
@@ -279,7 +416,9 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
       }
 
       var audioTimer = setTimeout(function () {
-        restartAudio('starvingEffect', starveCounter);
+          munchingAudio['starveSource'].connect(context.destination);
+          munchingAudio['starveSource'].start(0, starveCounter);
+          intervalStarted = true;
 
           starveInterval[munchTotal] = setInterval(function () {
             starveCounter += 1;
@@ -289,7 +428,7 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
               for (var i = 0; i < munchTotal + 1; i++) {
                 clearInterval(starveInterval[i]);
               }
-              stopAudio('starvingEffect');
+              munchingAudio['starveSource'].stop();
               munchResult(0);
             }
         }, 1000);
@@ -300,13 +439,17 @@ function starveRelease (audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
       for (var i = 0; i < munchTotal + 1; i++) {
         clearInterval(starveInterval[i]);
       }
-      stopAudio('starvingEffect');
+      if (intervalStarted) {
+            munchingAudio['starveSource'].stop();                                     // ignore this if audio hasn't started
+            munchingAudio['starveSource'] = context.createBufferSource();
+            munchingAudio['starveSource'].buffer = munchingAudio['bufferList'][17];
+      }
       clearTimeout(starveTimer);
-      munchPress (e, audioTimer, munchCounter, munchTotal, starveTimer, starveInterval);
+      munchPress (e, munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveInterval);
     });
 }
 
-function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
+function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
     if (e.which === 32) {
       var stop = 0;
       clearTimeout(audioTimer);
@@ -322,18 +465,43 @@ function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
       var j = Math.floor(Math.random() * 5);
 
       if (munchCounter === 1) {
-          playAudio('munchEffect' + k);
+          console.log('munchSource' + k);
+          munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
+          munchingAudio['gainMunchControl'].connect(context.destination);
+          munchingAudio['gainMunchControl'].gain.value = 1 - munchTotal / 50
+          munchingAudio['munchSource' + k].connect(munchingAudio['overdrive']);
+          munchingAudio['overdrive'].connect(munchingAudio['gainMunchOverdrive']);
+          munchingAudio['gainMunchOverdrive'].connect(context.destination);
+          munchingAudio['gainMunchOverdrive'].gain.value = munchTotal / 50;
+          munchingAudio['munchSource' + k].start(0);
+          munchingAudio['munchSource' + k] = context.createBufferSource();
+          munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k]
+          console.log(munchingAudio['bufferList'][k]);
       }
 
-      if (munchCounter === 2) {                         // TODO just improve the implementation
-          playAudio('crunchEffect' + j);
+      if (munchCounter === 2) {
+          munchingAudio['crunchSource' + j].connect(context.destination)
+          munchingAudio['crunchSource' + j].start(0);
+          munchingAudio['crunchSource' + j] = context.createBufferSource();
+          munchingAudio['crunchSource' + j].buffer = munchingAudio['bufferList'][7 + j]
       }
       if ((munchCounter === 3) && (munchTotal % 2 === 0)) {
         if (Math.random() > 0.5) {
-          playAudio('gruntEffect' + j);
-          console.log('playing grunt');
+            munchingAudio['gruntSource' + j].connect(context.destination)
+            munchingAudio['gruntSource' + j].start(0);
+            munchingAudio['gruntSource' + j] = context.createBufferSource();
+            munchingAudio['gruntSource' + j].buffer = munchingAudio['bufferList'][12 + j]
         }
         munchCounter = 0;
+      }
+      if (munchTotal > 9) {
+          if (munchTotal === 10) {
+              munchingAudio['chantSource'].connect(munchingAudio['gainChantControl']);
+              munchingAudio['gainChantControl'].connect(context.destination);
+              munchingAudio['chantSource'].start(0);
+          }
+          munchingAudio['gainChantControl'].gain.value = munchTotal / 50;
+          munchingAudio['chantSource'].playbackRate.value = 1 - munchTotal / 300;
       }
       if (munchTotal > 50) {
         clearTimeout(starveTimer);
@@ -345,14 +513,65 @@ function munchPress (e, audioTimer = 0, munchCounter = 0, munchTotal = 0, starve
       }
       if (!stop) {
         $(document).one('keyup', function (e) {
-        starveRelease(audioTimer, munchCounter, munchTotal, munchTotal, starveTimer, starveInterval);
+        starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, munchTotal, starveTimer, starveInterval);
       });
       }
+  } else {
+      $(document).one('keyup', function (e) {
+      starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, munchTotal, starveTimer, starveInterval);
+  });
   }
 }
 
+function munchingAudio(bufferList) {
+    var tuna = new Tuna(context);
+    munchingAudio = {};
+    for (var i = 0; i < 7; i++) {
+        munchingAudio['munchSource' + i] = context.createBufferSource();
+        munchingAudio['munchSource' + i].buffer = bufferList[i];
+    }
+    for (var j = 0; j < 5; j++) {
+        munchingAudio['crunchSource' + j] = context.createBufferSource();
+        munchingAudio['crunchSource' + j].buffer = bufferList[j + 7];
+        munchingAudio['gruntSource' + j] = context.createBufferSource();
+        munchingAudio['gruntSource' + j].buffer = bufferList[j + 12];
+    }
+    munchingAudio['starveSource'] = context.createBufferSource();
+    munchingAudio['starveSource'].buffer = bufferList[17];
+
+    munchingAudio['chantSource'] = context.createBufferSource();
+    munchingAudio['chantSource'].buffer = bufferList[18];
+    munchingAudio['gainChantControl'] = context.createGain();
+
+    munchingAudio['gainMunchOverdrive'] = context.createGain();
+    munchingAudio['gainMunchControl'] = context.createGain();
+
+    var overdrive = new tuna.Overdrive({
+    outputGain: 0.5,         //0 to 1+
+    drive: 0.7,              //0 to 1
+    curveAmount: 1,          //0 to 1
+    algorithmIndex: 0,       //0 to 5, selects one of our drive algorithms
+    bypass: 0
+    });
+
+    var convolver = new tuna.Convolver({
+    highCut: 10000,                         //20 to 22050
+    lowCut: 20,                             //20 to 22050
+    dryLevel: 1,                            //0 to 1+
+    wetLevel: 1,                            //0 to 1+
+    level: 1,                               //0 to 1+, adjusts total output of both wet and dry
+    impulse: "./audio/impulses/PrimeShort.wav",    //the path to your impulse response
+    bypass: 0
+});
+
+    munchingAudio['overdrive'] = convolver;
+
+    munchingAudio['bufferList'] = bufferList;
+    starveRelease(munchingAudio);
+}
+
 function munchingTime () {
-  clearScreen(0, ['.selectable', '.msg', '.pBreaks'], 200);
+  clearScreen(0, ['.selectable', '.msg'], 200);
   stopAudio('shiryu8');
   setTimeout(function () {
     showLine('You think.', 50, 1);
@@ -362,21 +581,34 @@ function munchingTime () {
     showLine('Nothing but... munching...', 100);
     showLine('Press [SPACEBAR] to munch', 50, 0, 0, 100, 'afterMessageInstruct');
 
-
+    var munchingEffects = [];
     for (var i = 0; i < 7; i++) {
-      addAudio('munchEffect' + i, './audio/munching/munch' + i + '.mp3');
+      munchingEffects.push('../audio/munching/munch' + i + '.mp3');
     }
     for (var j = 0; j < 5; j++) {
-      addAudio('crunchEffect' + j, './audio/munching/crunch' + j + '.mp3');
+      munchingEffects.push('../audio/munching/crunch' + j + '.mp3');
     }
     for (var k = 0; k < 5; k++) {
-      addAudio('gruntEffect' + k, './audio/munching/grunt' + k + '.mp3');
+        munchingEffects.push('../audio/munching/grunt' + k + '.mp3');
     }
-    addAudio('starvingEffect', './audio/munching/starvation.mp3');
+    munchingEffects.push('../audio/munching/starvation.mp3');
+    munchingEffects.push('../audio/munching/chorus.mp3');
 
-    setTimeout(function () {
-      starveRelease();
-    }, 5500);
+    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+    context = new AudioContext();
+
+    console.log(munchingEffects);
+
+    var bufferLoader = new BufferLoader(
+        context,
+        munchingEffects,
+        munchingAudio
+    );
+
+    bufferLoader.load();
+    // setTimeout(function () {
+    //   starveRelease();
+    // }, 5500);
   }, 400);
 }
 
@@ -416,11 +648,13 @@ function scene1starter () {
 
 $(document).ready(function () {
 
-  setTimeout(function () {
-    showLine('Welcome to Moon Prison.', 50, 1);
-    showLine('This is your cell.', 50);
-    showLine('A perfect glass room and a sun that never sets.', 50);
-    showLine('Amazing.', 100);
-    nextScreenLoader(scene1starter, 300);
-}, 200);
+    var context = new AudioContext();
+
+      setTimeout(function () {
+        showLine('Welcome to Moon Prison.', 50, 1);
+        showLine('This is your cell.', 50);
+        showLine('A perfect glass room and a sun that never sets.', 50);
+        showLine('Amazing.', 100);
+        nextScreenLoader(scene1starter, 300);
+    }, 200);
 });
