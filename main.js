@@ -2,7 +2,8 @@ var intId = [];
 var stringArray = [];
 var newClassArray = [];
 var curLine = [];
-var screenBreakCheck = false;                          // evil globals to be removed
+var screenBreakCheck = false;
+var context;                          // evil globals to be removed
 
 /*
 screenPause parameter: time to pause before fadeTime - default 500

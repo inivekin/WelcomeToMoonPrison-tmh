@@ -99,50 +99,5 @@ setTimeout(function () {
     console.log('change');
     convolver.disconnect(0);
     source1.connect(context.destination);
-}, 5000)
+}, 5000);
 }
-
-
-/*    console.log('started');
-    var buffer;
-    var randomBuffer = null;
-    var audio = document.getElementById('einstein');
-    var context = new AudioContext();
-    var source = context.createBufferSource();
-    //var convolver = context.createConvolver();
-    var irRRequest = new XMLHttpRequest();
-    irRRequest.open("GET", "./audio/ForestImpression.ogg", true);
-    irRRequest.responseType = "arraybuffer";
-    irRRequest.onload = function() {
-        context.decodeAudioData( irRRequest.response,
-            function(buffer) { randomBuffer = buffer; } );
-    };
-    irRRequest.send();
-
-    source.buffer = buffer
-// note the above is async; when the buffer is loaded, it will take effect, but in the meantime, the sound will be unaffected.
-
-    // source.connect( convolver );
-    // convolver.connect( context.destination ); // without tuna method
-
-    //var audio = $('#einstein').get(0);
-    // source.buffer = buffer;
-    //var gainControl = context.createGain();
-
-
-    /* var convolver = new tuna.Convolver({
-    highCut: 10000,                         //20 to 22050
-    lowCut: 20,                             //20 to 22050
-    dryLevel: 1,                            //0 to 1+
-    wetLevel: 1,                            //0 to 1+
-    level: 1,                               //0 to 1+, adjusts total output of both wet and dry
-    impulse: "./audio/impulses/PrimeLong.wav",    //the path to your impulse response
-    bypass: 0
-});
-
-    source.connect(context.destination);
-    // convolver.connect(context.destination);
-    console.log('starting source');
-
-    source.start(0);
-});*/

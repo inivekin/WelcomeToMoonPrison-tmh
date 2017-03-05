@@ -3,10 +3,10 @@ var policeTimer;
 
 function caught () {
     clearInterval(policeTimer);
-    clearScreen(300, ['chaserSpeech', 'anyText', 'msg'], 300); // not working for some reason (maybe disable interval?)
+    clearScreen(300, ['.chaserSpeech', '.anyText', '.msg'], 300); // not working for some reason (maybe disable interval?)
     stopAudio('MoDemJams');
     setTimeout(function () {
-        showLine('success', 50, 1);
+        showLine('To be continued...', 50, 1);
     }, 700);
 }
 
@@ -42,74 +42,36 @@ function policeman (clickCounter, clickInterval, extra) {
     return (intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
 }
 
-function freeClicking (starSizeArray, clickCounter = 0, extra = 10000) {
-  $(document).one('mousedown', function (e) {
-    playAudio('MoDemJams');
-    $(document).unbind('contextmenu');
-    $(document).bind('contextmenu.prevention', function (e) {
-      e.preventDefault();
-      return false;
-    });
-    if (e.which === 1) {
-        clickCounter += 1;
-        starredStep(clickCounter, 100, extra);
-
-        var policePosition = policeman(clickCounter, 100, extra);
-        if(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) {
-            caught();
-        } else if (clickCounter > 115) {
-            caught();
-        } else {
-        $(document).unbind('contextmenu.prevention');
-        $(document).bind('contextmenu', function (e) {
-          e.preventDefault();
-
-          clickCounter += 1;
-          starredStep(clickCounter, 100, extra);
-
-          if(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) {
-            //   $(document).unbind('contextmenu');
-              caught();
-          } else if (clickCounter > 115) {
-              caught();
-          } else {
-              freeClicking(starSizeArray, clickCounter);
-          }
-          return false;
-        });
-    }
-    } else {
-        freeClicking(starSizeArray, clickCounter);
-    }
-    });
- }
-
-function nowRun(clickCounter) {
-    for (var i = 0; i < clickCounter + 1; i++) {
-        clearInterval(intId[i])
-        $('#star' + i).remove()
-    }
-  clearScreen(300, ['.animElem', '.anyText', 'starField'], 300);
+function nowRun(totalClicks, extra = 10000, clickCounter = 0, policePosition = -1) {
+    clearScreen(0, ['.animElem', '.anyText', '.starField', '.msg'], 0);
+    // for (var i = 0; i < totalClicks; i++) {
+    //     clearInterval(intId[i]);
+    //     $('#star' + i).remove();
+    // }
   stopAudio('einstein');
   addAudio('MoDemJams', './audio/MoDemJams.webm', 12);
-  var starSizeArray = [];
+
   setTimeout(function () {
     showLine('Oh, it was running', 100, 1);
-    freeClicking(starSizeArray);
-  }, 600);
-}
-
-function walkFaster (clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter = 0) {
-  clearScreen();
-  $('.animElements').fadeTo(500, 0);
-  $('#instructorRight').fadeTo(500, 0);
-  $('#instructorLeft').fadeTo(500, 0);
-  setTimeout(function () {
-    showLine('What was it?', 50, 1);
-    $('.animElements').fadeTo(500, 1);
-    $('#instructorLeft').fadeTo(500, 1);
-    alternateClicks(300, 700, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, 0, 1);
-  }, 1200);
+    alternateClicks(0, 0, [
+        function () {
+            $('#MoDemJams').get(0).play();
+            clickCounter += 1;
+            starredStep(clickCounter, 100, extra);
+            policePosition = policeman(clickCounter, 100, extra);
+        },
+        function () {
+            clickCounter += 1;
+            starredStep(clickCounter, 100, extra);
+        },
+        function () {},
+        function () {},
+        function (){
+            caught();
+        }], function () {
+            return Boolean(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) || (clickCounter > 115);
+        });
+  }, 700);
 }
 
 function starredStep (clickCounter, clickInterval, extra = 0, text = '*', offset = 1) {
@@ -130,109 +92,182 @@ function starredStep (clickCounter, clickInterval, extra = 0, text = '*', offset
     }, 1100);
 }
 
-function alternateClicks (clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter = 0, next = 0) {
+function switchGains(gainNodeArray, toggleArray) {
+    console.log('switching gains');
+    for (var i = 0; i < gainNodeArray.length; i++) {
+        gainNodeArray[i].gain.value = toggleArray[i];
+    }
+}
+
+function animateClickIndicator (click, animElements, clickInterval, audioInterval) {
+    console.log('animating indicators');
+    if (click === 'left') {
+        for (var i = 0; i < (animElements[0].length + 3) / 4; i++) {
+          $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
+          $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * 0.5 * (clickInterval / 6), 0);
+        }
+        $('#instructorLeft').fadeTo(clickInterval / 6, 0);
+        setTimeout(function () {
+          $('#instructorRight').fadeTo(clickInterval / 2, 1);
+      }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
+  } else if (click === 'right') {
+      for (var j = 0; j < animElements[0].length / 2; j++) {
+        $('#animElem0span' + ((animElements[0].length + 3) / 4 - j - 1)).fadeTo(j * (clickInterval / 6) + audioInterval - clickInterval, 1);
+        $('#animElem0span' + ((animElements[0].length + 3) / 4 + j - 1)).fadeTo(j * 0.5 * (clickInterval / 6), 0);
+      }
+      $('#instructorRight').fadeTo(clickInterval / 6, 0);
+      setTimeout(function () {
+        $('#instructorLeft').fadeTo(clickInterval / 2, 1);
+    }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
+  }
+}
+
+function audioTimeout (id) {
+    console.log('audio timeout');
+    setTimeout(function (){
+        stopAudio(id);
+    },0);
+}
+
+function slowWalk(clickInterval, audioInterval, gainConvolver, gainControl, animElements, condition = 0, clickCounter = 0) {
+    var exactInt = clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2);
+    alternateClicks(clickInterval, audioInterval, [
+                                function () {
+                                    switchGains([gainConvolver, gainControl],[0,1]);             // at left click
+                                    randomStars(clickCounter);
+                                    fadeloop('#star' + clickCounter, exactInt, exactInt, true, clickCounter);
+                                    animateClickIndicator('left', animElements, clickInterval, audioInterval);
+                                    if(($('#einstein').get(0).paused)) {
+                                      $('#einstein').get(0).play();
+                                    }
+                                    clickCounter += 1;
+                                    condition = (clickCounter > ((1700 - clickInterval) / 100));
+                                },
+                                function () {
+                                    switchGains([gainConvolver, gainControl],[0,1]);             // at right click
+                                    randomStars(clickCounter);
+                                    fadeloop('#star' + clickCounter, exactInt, exactInt, true, clickCounter);
+                                    animateClickIndicator('right', animElements, clickInterval, audioInterval);
+                                    if(($('#einstein').get(0).paused)) {
+                                      $('#einstein').get(0).play();
+                                    }
+                                    clickCounter += 1;
+                                    condition = (clickCounter > ((1700 - clickInterval) / 100));
+                                },
+                                function () {
+                                    switchGains([gainConvolver, gainControl],[0,1]);            // at failed left click
+                                    audioTimeout('einstein');
+                                },
+                                function () {
+                                    switchGains([gainConvolver, gainControl],[0,1]);            // at failed right click
+                                    audioTimeout('einstein');
+                                },
+                                function (){                                                              // on reaching click goal (defined by condition)
+                                    var totalClicks;
+                                    clearScreen(300, ['.msg'], 300);
+                                    $('.animElements').fadeTo(500, 0);
+                                    $('#instructorRight').fadeTo(500, 0);
+                                    $('#instructorLeft').fadeTo(500, 0);
+                                    setTimeout(function () {
+                                      $('.animElements').fadeTo(500, 1);
+                                      $('#instructorLeft').fadeTo(500, 1);
+                                      if (clickInterval !== 300) {
+                                          showLine('What was it?', 50, 1);
+                                          totalClicks = clickCounter;
+                                          slowWalk(300, 700, gainConvolver, gainControl, animElements, 0);
+                                      } else {
+                                          totalClicks += clickCounter;
+                                          nowRun(totalClicks);
+                                      }
+                                    }, 1200);
+                                }], function () {
+                                    return Boolean(clickCounter > ((1700 - clickInterval) / 100) - 1);
+                                });
+}
+
+
+function alternateClicks (clickInterval, audioInterval, clickFunction, condition, leftClickTimer = 0, rightClickTimer = 0, clickCounter = 0) {
   $(document).one('mousedown', function (e) {
     $(document).bind('contextmenu', function (e) {
       e.preventDefault();
       return false;
     });
     if (e.which === 1) {
-        gainConvolver.gain.value = 0;
-        gainControl.gain.value = 1;
-
-        clickCounter += 1;
-        randomStars(clickCounter);
-        fadeloop ('#star' + clickCounter, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2), clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2), true, clickCounter);
-
-        var rightReverbTimer, leftReverbTimer;
+        clickFunction[0]();
         clearTimeout(rightClickTimer);
-        clearTimeout(rightReverbTimer);
-
-      for (var i = 0; i < (animElements[0].length + 3) / 4; i++) {
-        $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
-        $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * 0.5 * (clickInterval / 6), 0);
-      }
-      $('#instructorLeft').fadeTo(clickInterval / 6, 0);
-      setTimeout(function () {
-        $('#instructorRight').fadeTo(clickInterval / 2, 1);
-    }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
-
-      if(($('#einstein').get(0).paused)) {
-        $('#einstein').get(0).play();
-      }
 
       leftClickTimer = setTimeout(function () {
-          gainConvolver.gain.value = 1;
-          gainControl.gain.value = 0;
-          setTimeout(function (){
-              stopAudio('einstein');
-          },0);
+        clickFunction[2]();
       }, audioInterval);
 
-      setTimeout(function () {
-        $(document).unbind('contextmenu');
-        $(document).bind('contextmenu', function (e) {
-          e.preventDefault();
-
-          gainConvolver.gain.value = 0;
-          gainControl.gain.value = 1;
-
-          clickCounter += 1;
-          randomStars(clickCounter);
-          fadeloop ('#star' + clickCounter, 1400, 1000, true, clickCounter);
-        //   starredStep(clickCounter, clickInterval);
-
+      if (condition()) {
           clearTimeout(leftClickTimer);
-          clearTimeout(leftReverbTimer);
-
-          if(($('#einstein').get(0).paused)) {
-            $('#einstein').get(0).play();
-          }
-
-          for (var i = 0; i < animElements[0].length / 2; i++) {
-            $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
-            $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * 0.5 * (clickInterval / 6), 0);
-          }
-
-          $('#instructorRight').fadeTo(clickInterval / 6, 0);
-          setTimeout(function () {
-            $('#instructorLeft').fadeTo(clickInterval / 2, 1);
-        }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
-
-          rightClickTimer = setTimeout(function () {
-              gainConvolver.gain.value = 1;
-              gainControl.gain.value = 0;
-              setTimeout(function (){
-                  stopAudio('einstein');
-              },0);
-          }, audioInterval);
-
+          clearTimeout(rightClickTimer);
+          clickFunction[4]();
+      } else {
           setTimeout(function () {
             $(document).unbind('contextmenu');
-            if (clickCounter > ((1700 - clickInterval) / 100)) {
+            $(document).bind('contextmenu', function (e) {
+              e.preventDefault();
+              clickFunction[1]();
               clearTimeout(leftClickTimer);
-              clearTimeout(rightClickTimer);
 
-              if (next === 1) {
-                nowRun(clickCounter);
+              rightClickTimer = setTimeout(function () {
+                clickFunction[3]();
+              }, audioInterval);
+
+              setTimeout(function () {
+                $(document).unbind('contextmenu');
+                if (condition()) {
+                  clearTimeout(leftClickTimer);
+                  clearTimeout(rightClickTimer);
+                  clickFunction[4]();
+                } else {
+                    alternateClicks (clickInterval, audioInterval, clickFunction, condition, leftClickTimer, rightClickTimer, clickCounter);
+                }
                 return false;
-              } else {
-                walkFaster(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl);
-                return false;
-              }
-            } else {
-              alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter, next);
-            }
-            return false;
+              }, clickInterval);
+            });
           }, clickInterval);
-        });
-      }, clickInterval);
-    //}
+      }
     } else {
-      alternateClicks(clickInterval, audioInterval, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl, clickCounter, next);
+        alternateClicks (clickInterval, audioInterval, clickFunction, condition, leftClickTimer, rightClickTimer, clickCounter);
     }
     return false;
   });
+}
+
+function createClickIndicators() {
+    var instructorLeft = document.createElement('span');
+    $('#txtDiv').append(instructorLeft);
+    $(instructorLeft).attr('class', 'anyText').html('[left click]').attr('id', 'instructorLeft').fadeIn(2000);
+
+
+    var animElements = ['* - - - - - _ - - - - - *'],
+        animElemSpans = [];
+    for (var i = 0; i < animElements.length; i++) {
+      animElemSpans[i] = document.createElement('span');
+      $(animElemSpans[i]).attr('id', 'animElem' + i);
+      $(animElemSpans[i]).attr('class', 'animElements');
+      $('#txtDiv').append(animElemSpans[i]);
+      showTextByWord('animElem', '#txtDiv', animElements[i], 0, 0, i);
+
+    }
+
+    var instructorRight = document.createElement('span');
+    $('#txtDiv').append(instructorRight);
+    $(instructorRight).attr('class', 'anyText').html('[right click]').attr('id', 'instructorRight');
+    $(instructorRight).css('opacity', '0');
+
+
+    for (var j = 0; j < (animElements[0].length + 1) / 2; j++) {
+      if (j === ((animElements[0].length + 3) / 4 - 1)) {
+        $('#animElem' + '0' + 'span' + j).fadeIn(2000);// .css('opacity', '1');
+      } else {
+        $('#animElem' + '0' + 'span' + j).css('opacity', '0');
+      }
+    }
+    return animElements;
 }
 
 function startWalking () {
@@ -267,42 +302,10 @@ function startWalking () {
   gainConvolver.connect(context.destination);
   gainControl.connect(context.destination);
 
-  //$('#einstein').on('canplay', function () {
     setTimeout(function () {
-      var instructorLeft = document.createElement('span');
-      $('#txtDiv').append(instructorLeft);
-      $(instructorLeft).attr('class', 'anyText').html('[left click]').attr('id', 'instructorLeft').fadeIn(2000);
-
-
-      var animElements = ['* - - - - - _ - - - - - *'],
-          animElemSpans = [];
-      for (var i = 0; i < animElements.length; i++) {
-        animElemSpans[i] = document.createElement('span');
-        $(animElemSpans[i]).attr('id', 'animElem' + i);
-        $(animElemSpans[i]).attr('class', 'animElements');
-        $('#txtDiv').append(animElemSpans[i]);
-        showTextByWord('animElem', '#txtDiv', animElements[i], 0, 0, i);
-
-      }
-
-      var instructorRight = document.createElement('span');
-      $('#txtDiv').append(instructorRight);
-      $(instructorRight).attr('class', 'anyText').html('[right click]').attr('id', 'instructorRight');
-      $(instructorRight).css('opacity', '0');
-
-
-      for (var j = 0; j < (animElements[0].length + 1) / 2; j++) {
-        if (j === ((animElements[0].length + 3) / 4 - 1)) {
-          $('#animElem' + '0' + 'span' + j).fadeIn(2000);// .css('opacity', '1');
-        } else {
-          $('#animElem' + '0' + 'span' + j).css('opacity', '0');
-        }
-      }
-      var leftClickTimer, rightClickTimer;
-
-      alternateClicks(900, 1400, leftClickTimer, rightClickTimer, animElements, gainConvolver, gainControl);
+        var animElements = createClickIndicators();
+        slowWalk(900, 1400, gainConvolver, gainControl, animElements);
     }, 4500);
-  //});
 }
 
 function munchResult (result) {
@@ -311,9 +314,7 @@ function munchResult (result) {
   }
   for (var j = 0; j < 5; j++) {
     removeAudio('crunchEffect' + j, './audio/munching/crunch' + j + '.mp3');
-  }
-  for (var k = 0; k < 5; k++) {
-    removeAudio('gruntEffect' + k, './audio/munching/grunt' + k + '.mp3');
+    removeAudio('gruntEffect' + j, './audio/munching/grunt' + j + '.mp3');
   }
   removeAudio('starvingEffect', './audio/munching/starvation.mp3');
 
@@ -483,11 +484,11 @@ function scene1starter () {
 
 
 $(document).ready(function () {
-  setTimeout(function () {
-    showLine('Welcome to Moon Prison.', 50, 1);
-    showLine('This is your cell.', 50);
-    showLine('A perfect glass room and a sun that never sets.', 50);
-    showLine('Amazing.', 100);
-    nextScreenLoader(scene1starter, 300);
-}, 200);
+      setTimeout(function () {
+        showLine('Welcome to Moon Prison.', 50, 1);
+        showLine('This is your cell.', 50);
+        showLine('A perfect glass room and a sun that never sets.', 50);
+        showLine('Amazing.', 100);
+        nextScreenLoader(scene1starter, 300);
+    }, 200);
 });
