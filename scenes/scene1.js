@@ -3,7 +3,7 @@ var policeTimer;
 
 function caught () {
     clearInterval(policeTimer);
-    clearScreen(300, ['.chaserSpeech', '.anyText', '.msg'], 300); // not working for some reason (maybe disable interval?)
+    clearScreen(300, ['.chaserSpeech', '.anyText', '.msg'], 700);
     setTimeout(function () {
         showLine('To be continued...', 50, 1);
     }, 700);
@@ -35,17 +35,17 @@ function policeman (clickCounter, clickInterval, extra) {
             'top'       :   '75%'
         }).animate({
             'opacity'   :   '0',
-            'left'      :   '-=10px'
+            'left'      :   '-=10%'
         }, 2000);
     }
     return (intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
 }
 
 function nowRun(bufferList, extra = 10000, clickCounter = 0, policePosition = -1) {
-    clearScreen(0, ['.animElem', '.anyText', '.starField', '.msg'], 0);
+    clearScreen(0, ['.animElem', '.anyText', '.starField', '.msg'], 1000);
     var tuna = new Tuna(context);
     var filter = new tuna.Filter({
-        frequency: 4000, //20 to 22050
+        frequency: 3000, //20 to 22050
         Q: 1, //0.001 to 100
         gain: 0, //-40 to 40 (in decibels)
         filterType: "lowpass", //lowpass, highpass, bandpass, lowshelf, highshelf, peaking, notch, allpass
@@ -84,13 +84,19 @@ function nowRun(bufferList, extra = 10000, clickCounter = 0, policePosition = -1
         },
         function () {},
         function () {},
-        function (){
+        function () {
+          var audioSlowdown = setInterval(function () {
+            source.playbackRate.value -= 0.05;
+          }, 250);
+          setTimeout(function () {
+            clearInterval(audioSlowdown);
             source.stop();
             caught();
+          }, 5000);
         }], function () {
             return Boolean(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) || (clickCounter > 115);
         });
-  }, 700);
+  }, 1100);
 }
 
 function nowRunAudio () {
@@ -214,15 +220,15 @@ function slowWalk(clickInterval, audioInterval, eotb, animElements, playing = fa
                                         eotb['source'].connect(eotb['gainControl']);
                                 },
                                 function (){                                                              // on reaching click goal (defined by condition)
-                                    clearScreen(300, ['.msg'], 300);
+                                    clearScreen(300, ['.msg'], 700);
                                     $('.animElements').fadeTo(500, 0);
                                     $('#instructorRight').fadeTo(500, 0);
                                     $('#instructorLeft').fadeTo(500, 0);
                                     setTimeout(function () {
-                                      $('.animElements').fadeTo(500, 1);
-                                      $('#instructorLeft').fadeTo(500, 1);
                                       if (clickInterval !== 300) {
                                           showLine('What was it?', 50, 1);
+                                          $('.animElements').fadeTo(500, 1);
+                                          $('#instructorLeft').fadeTo(500, 1);
                                           totalClicks = clickCounter;
                                           slowWalk(300, 700, eotb, animElements, true);
                                       } else {
@@ -386,8 +392,9 @@ function munchResult (result) {
   removeAudio('starvingEffect', './audio/munching/starvation.mp3');
 
   if (result) {
-    clearScreen(0, ['.msg'], 0);
-    nextScreenLoader(startWalking, 0);
+    clearScreen(300, ['.msg'], 300);
+    showLine('', 0, 1);                                                         // added just to clear totalDelay, surely a better way is possible?
+    nextScreenLoader(startWalking, 1500);
   } else {
     clearScreen(300, ['.msg'], 600);
     setTimeout(function () {
@@ -396,23 +403,32 @@ function munchResult (result) {
   }
 }
 
-function starveRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
-  var starveInterval = [],
-      starveCounter = 0,
+function starveRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveCounter = 0, starveInterval = 0) {
+  var starveInterval,
       intervalStarted = false;
 
       starveTimer = setTimeout(function () {
         munchCounter = 0;
       }, 250);
 
+      console.log(starveCounter);
+
       if (munchTotal > 8) {
+        if (munchTotal > 15) {
+          if (munchTotal > 21) {
+            if (munchTotal > 32) {
+                starveCounter = 32;                                             // TODO add in decimal places to avoid pop in audio
+            } else {
+              starveCounter = 21;
+            }
+          } else {
+            starveCounter = 15;
+          }
+        } else {
           starveCounter = 8;
-      } else if (munchTotal > 15) {
-          starveCounter = 15;
-      } else if (munchTotal > 21) {
-          starveCounter = 21;
-      } else if (munchTotal > 32) {
-          starveCounter = 32;
+        }
+      } else {
+        starveCounter = 0;
       }
 
       var audioTimer = setTimeout(function () {
@@ -420,14 +436,12 @@ function starveRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
           munchingAudio['starveSource'].start(0, starveCounter);
           intervalStarted = true;
 
-          starveInterval[munchTotal] = setInterval(function () {
+          starveInterval = setInterval(function () {                // interval doesn't clear for some reason, try removing array thing and just have normal variable?
             starveCounter += 1;
-
             if (starveCounter > 38) {
               clearTimeout(starveTimer);
-              for (var i = 0; i < munchTotal + 1; i++) {
-                clearInterval(starveInterval[i]);
-              }
+              clearTimeout(audioTimer);
+              clearInterval(starveInterval);
               munchingAudio['starveSource'].stop();
               munchResult(0);
             }
@@ -436,23 +450,23 @@ function starveRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
 
 
     $(document).one('keydown', function (e) {
-      for (var i = 0; i < munchTotal + 1; i++) {
-        clearInterval(starveInterval[i]);
-      }
+      clearInterval(starveInterval);
       if (intervalStarted) {
-            munchingAudio['starveSource'].stop();                                     // ignore this if audio hasn't started
+            munchingAudio['starveSource'].stop();
             munchingAudio['starveSource'] = context.createBufferSource();
             munchingAudio['starveSource'].buffer = munchingAudio['bufferList'][17];
       }
       clearTimeout(starveTimer);
-      munchPress (e, munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveInterval);
+      clearTimeout(audioTimer);
+      munchPress (e, munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
     });
 }
 
-function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveInterval = 0) {
+function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveCounter = 0, starveInterval = 0) {
     if (e.which === 32) {
       var stop = 0;
       clearTimeout(audioTimer);
+
       munchCounter += 1;
 
       if (munchCounter > 3) {
@@ -461,64 +475,82 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
 
       munchTotal += 1;
 
-      var k = Math.floor(Math.random() * 7);
-      var j = Math.floor(Math.random() * 5);
+      k = Math.floor(Math.random() * 7);
+      j = Math.floor(Math.random() * 5);
 
       if (munchCounter === 1) {
-          console.log('munchSource' + k);
           munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
           munchingAudio['gainMunchControl'].connect(context.destination);
-          munchingAudio['gainMunchControl'].gain.value = 1 - munchTotal / 50
-          munchingAudio['munchSource' + k].connect(munchingAudio['overdrive']);
-          munchingAudio['overdrive'].connect(munchingAudio['gainMunchOverdrive']);
+          munchingAudio['munchSource' + k].connect(munchingAudio['convolver']);
+          munchingAudio['convolver'].connect(munchingAudio['gainMunchOverdrive']);
           munchingAudio['gainMunchOverdrive'].connect(context.destination);
-          munchingAudio['gainMunchOverdrive'].gain.value = munchTotal / 50;
+          munchingAudio['gainMunchOverdrive'].gain.value = 1 - munchTotal / 50;
+          munchingAudio['gainMunchControl'].gain.value = munchTotal / 50;
           munchingAudio['munchSource' + k].start(0);
           munchingAudio['munchSource' + k] = context.createBufferSource();
-          munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k]
-          console.log(munchingAudio['bufferList'][k]);
+          munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k];
       }
 
       if (munchCounter === 2) {
-          munchingAudio['crunchSource' + j].connect(context.destination)
+          munchingAudio['crunchSource' + j].connect(munchingAudio['gainCrunchControl']);
+          munchingAudio['gainCrunchControl'].gain.value = 0.5 + munchTotal / 20;
+          munchingAudio['gainCrunchControl'].connect(context.destination);
           munchingAudio['crunchSource' + j].start(0);
           munchingAudio['crunchSource' + j] = context.createBufferSource();
-          munchingAudio['crunchSource' + j].buffer = munchingAudio['bufferList'][7 + j]
+          munchingAudio['crunchSource' + j].buffer = munchingAudio['bufferList'][7 + j];
       }
-      if ((munchCounter === 3) && (munchTotal % 2 === 0)) {
-        if (Math.random() > 0.5) {
-            munchingAudio['gruntSource' + j].connect(context.destination)
+      if (munchCounter === 3 && munchTotal % 2 === 0 && munchTotal < 45) {
+        if (Math.random() < munchTotal / 50) {
+            munchingAudio['gruntSource' + j].connect(munchingAudio['gainGruntControl']);
+            munchingAudio['gainGruntControl'].connect(context.destination);
+            munchingAudio['gruntSource' + j].connect(munchingAudio['overdrive']);
+            munchingAudio['overdrive'].connect(munchingAudio['gainGruntOverdrive']);
+            munchingAudio['gainGruntOverdrive'].connect(context.destination);
+            munchingAudio['gainGruntControl'].gain.value = munchTotal / 50;
+            munchingAudio['gainGruntOverdrive'].gain.value = (munchTotal > 25 ? munchTotal / 75 : 0);
             munchingAudio['gruntSource' + j].start(0);
             munchingAudio['gruntSource' + j] = context.createBufferSource();
-            munchingAudio['gruntSource' + j].buffer = munchingAudio['bufferList'][12 + j]
+            munchingAudio['gruntSource' + j].buffer = munchingAudio['bufferList'][12 + j];
         }
         munchCounter = 0;
       }
+
+
+
       if (munchTotal > 9) {
           if (munchTotal === 10) {
               munchingAudio['chantSource'].connect(munchingAudio['gainChantControl']);
               munchingAudio['gainChantControl'].connect(context.destination);
-              munchingAudio['chantSource'].start(0);
+              // munchingAudio['chantSource'].start(0);
+              var munchBlink = setInterval(function () {
+                  $('.afterMessageInstruct').fadeTo(250, 0.1).delay(100).fadeTo(250, 1);
+              }, 600);
           }
           munchingAudio['gainChantControl'].gain.value = munchTotal / 50;
-          munchingAudio['chantSource'].playbackRate.value = 1 - munchTotal / 300;
       }
       if (munchTotal > 50) {
+        munchingAudio['gruntSource' + j].connect(munchingAudio['gainGruntControl']);
+        munchingAudio['gainGruntControl'].connect(context.destination);
+        munchingAudio['gruntSource' + j].connect(munchingAudio['overdrive']);
+        munchingAudio['overdrive'].connect(munchingAudio['gainGruntOverdrive']);
+        munchingAudio['gainGruntOverdrive'].connect(context.destination);
+        munchingAudio['gainGruntControl'].gain.value = munchTotal / 25;
+        munchingAudio['gainGruntOverdrive'].gain.value = munchTotal / 75;
+        munchingAudio['gruntSource' + j].start(0);
         clearTimeout(starveTimer);
-        for (var i = 0; i < munchTotal + 1; i++) {
-          clearInterval(starveInterval[i]);
-        }
+        clearInterval(starveInterval);
+        clearInterval(munchBlink);
         munchResult(1);
         stop = 1;
       }
       if (!stop) {
         $(document).one('keyup', function (e) {
-        starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, munchTotal, starveTimer, starveInterval);
+        starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
       });
       }
   } else {
       $(document).one('keyup', function (e) {
-      starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, munchTotal, starveTimer, starveInterval);
+      starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
   });
   }
 }
@@ -545,26 +577,30 @@ function munchingAudio(bufferList) {
 
     munchingAudio['gainMunchOverdrive'] = context.createGain();
     munchingAudio['gainMunchControl'] = context.createGain();
+    munchingAudio['gainCrunchControl'] = context.createGain();
+    munchingAudio['gainGruntControl'] = context.createGain();
+    munchingAudio['gainGruntOverdrive'] = context.createGain();
 
     var overdrive = new tuna.Overdrive({
-    outputGain: 0.5,         //0 to 1+
-    drive: 0.7,              //0 to 1
-    curveAmount: 1,          //0 to 1
+    outputGain: 0.1,         //0 to 1+
+    drive: 0.5,              //0 to 1
+    curveAmount: 0.95,          //0 to 1
     algorithmIndex: 0,       //0 to 5, selects one of our drive algorithms
-    bypass: 0
+    bypass: 1                                                                   // TODO check to see if overdrive effect is useful
     });
 
     var convolver = new tuna.Convolver({
-    highCut: 10000,                         //20 to 22050
+    highCut: 7500,                         //20 to 22050
     lowCut: 20,                             //20 to 22050
     dryLevel: 1,                            //0 to 1+
-    wetLevel: 1,                            //0 to 1+
-    level: 1,                               //0 to 1+, adjusts total output of both wet and dry
+    wetLevel: 3,                            //0 to 1+
+    level: 0.5,                               //0 to 1+, adjusts total output of both wet and dry
     impulse: "./audio/impulses/PrimeShort.wav",    //the path to your impulse response
     bypass: 0
 });
 
-    munchingAudio['overdrive'] = convolver;
+    munchingAudio['convolver'] = convolver;
+    munchingAudio['overdrive'] = overdrive;
 
     munchingAudio['bufferList'] = bufferList;
     starveRelease(munchingAudio);
@@ -649,6 +685,8 @@ function scene1starter () {
 $(document).ready(function () {
 
     var context = new AudioContext();
+
+    // munchingTime();
 
       setTimeout(function () {
         showLine('Welcome to Moon Prison.', 50, 1);
