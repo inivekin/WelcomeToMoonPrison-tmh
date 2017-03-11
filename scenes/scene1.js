@@ -211,7 +211,7 @@ function slowWalk(clickInterval, audioInterval, eotb, animElements, totalClicks 
     alternateClicks(clickInterval, audioInterval, [
                                 function () {
                                     switchGains([eotb['gainConvolver'], eotb['gainControl']],[0,1]);             // at left click
-                                    randomStars(totalClicks + clickCounter);                                                   // TODO use total clicks somehow
+                                    randomStars(totalClicks + clickCounter);
                                     fadeloop('#star' + (totalClicks + clickCounter), exactInt, exactInt, true, totalClicks + clickCounter);
                                     animateClickIndicator('left', animElements, clickInterval, audioInterval);
                                     if (!playing) {
@@ -270,7 +270,7 @@ function slowWalk(clickInterval, audioInterval, eotb, animElements, totalClicks 
                                           totalClicks = clickCounter;
                                           slowWalk(300, 700, eotb, animElements, totalClicks, true);
                                       } else {
-                                          eotb['source'].stop();                                          // add in low pass filter and fade out instead of .stop()
+                                          eotb['source'].stop();
                                           clearScreen(0, ['.starField', '#instructorLeft'], 0);
                                           nowRunAudio();
                                       }
@@ -456,7 +456,7 @@ function starveRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
         if (munchTotal > 15) {
           if (munchTotal > 21) {
             if (munchTotal > 32) {
-                starveCounter = 32.3;                                             // TODO add in decimal places to avoid pop in audio
+                starveCounter = 32.3;
             } else {
               starveCounter = 21.1;
             }
@@ -475,7 +475,7 @@ function starveRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
           munchingAudio['starveSource'].start(0, starveCounter.toFixed(1));
           intervalStarted = true;
 
-          starveInterval = setInterval(function () {                // interval doesn't clear for some reason, try removing array thing and just have normal variable?
+          starveInterval = setInterval(function () {
             starveCounter += 1;
             if (starveCounter > 38) {
               clearTimeout(starveTimer);
@@ -625,7 +625,7 @@ function munchingAudio(bufferList) {
     drive: 0.5,              //0 to 1
     curveAmount: 0.95,          //0 to 1
     algorithmIndex: 0,       //0 to 5, selects one of our drive algorithms
-    bypass: 1                                                                   // TODO check to see if overdrive effect is useful
+    bypass: 1
     });
 
     var convolver = new tuna.Convolver({
@@ -646,6 +646,7 @@ function munchingAudio(bufferList) {
 }
 
 function munchingTime () {
+  $('#ansDiv').off('.answering');
   clearScreen(0, ['.selectable', '.msg'], 200);
   stopAudio('shiryu8');
   setTimeout(function () {
@@ -698,18 +699,18 @@ function scene1starter () {
     answerOptions(['SIT', 'STAND', 'THINK ABOUT WHAT YOU\'VE DONE'], ['WHY', 'WHY', 'OH GOD WHY']);
 
     // TODO I will clean this up I swear. It just hurts for me to look at for too long of a period
-    $('#ansDiv').on('mousedown', '#ansOp0', function () {
+    $('#ansDiv').on('mousedown.answering', '#ansOp0', function () {
       console.log('clicked sit');
     switchOnClick([$('#ansOp1').css('opacity') === '1' || $('#ansOp1').css('opacity') === '0.5',
                               $('#ansOp1').css('opacity') === '0'],[[0, 1, 1],[0,1,1]], ['You are now sitting. Beautiful.', 'You are now sitting. Beautiful.']);
                             });
-    $('#ansDiv').on('mousedown', '#ansOp1', function () {
+    $('#ansDiv').on('mousedown.answering', '#ansOp1', function () {
       console.log('clicked stand');
     switchOnClick([$('#ansOp0').css('opacity') === '1' && $('#ansOp1').css('opacity') === '1',
                               $('#ansOp0').css('opacity') === '0',
                               $('#ansOp1').css('opacity') === '0.5'], [[1, 0, 1],[1, 0, 1],[ 1, 0, 1]], ['You continue to stand. You are thinking nothing.', 'You are now standing. Horrible.', 'You\'ve been standing a while, perhaps you should SIT and THINK ABOUT WHAT YOU\'VE DONE.']);
                             });
-    $('#ansDiv').on('mousedown', '#ansOp2', function () {
+    $('#ansDiv').on('mousedown.answering', '#ansOp2', function () {
       console.log('clicked think');
     switchOnClick([($('#ansOp1').css('opacity') === '1' && $('#ansOp0').css('opacity') === '1') || ($('#ansOp1').css('opacity') === '0.5' && $('#ansOp0').css('opacity') === '1'),
                               $('#ansOp1').css('opacity') === '1' && $('#ansOp0').css('opacity') === '0',
