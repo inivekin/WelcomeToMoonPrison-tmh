@@ -2,11 +2,16 @@ var intervalCounter;
 var policeTimer;
 
 function caught () {
+    $(document).bind('contextmenu', function (e) {
+      e.preventDefault();
+      return false;
+    });
     clearInterval(policeTimer);
     clearScreen(300, ['.chaserSpeech', '.anyText', '.msg'], 700);
     setTimeout(function () {
-        showLine('To be continued...', 50, 1);
-    }, 700);
+        $(document).unbind('contextmenu');
+        loadScene('/scenes/scene2.js');
+    }, 1200);
 }
 
 function policeman (clickCounter, clickInterval, extra) {
@@ -42,7 +47,7 @@ function policeman (clickCounter, clickInterval, extra) {
 }
 
 function nowRun(bufferList, extra = 10000, clickCounter = 0, policePosition = -1) {
-    clearScreen(0, ['.animElem', '.anyText', '.starField', '.msg'], 1000);
+    showLine('Oh, it was running', 100, 1);
     var tuna = new Tuna(context);
     var filter = new tuna.Filter({
         frequency: 3000, //20 to 22050
@@ -61,13 +66,21 @@ function nowRun(bufferList, extra = 10000, clickCounter = 0, policePosition = -1
     gainFilter.connect(context.destination);
     source.connect(gainControl);
     gainControl.connect(context.destination);
-    gainFilter.gain.value = 0.5;
+    gainFilter.gain.value = 0;
     gainControl.gain.value = 0;
+
+    var audioFadeIn = setInterval(function () {
+      gainFilter.gain.value += 0.05;
+    }, 250);
+    setTimeout(function() {
+      clearInterval(audioFadeIn);
+    }, 5000);
 
     source.start(0, 12);
 
+    var caughtStatus = false;
+
   setTimeout(function () {
-    showLine('Oh, it was running', 100, 1);
     alternateClicks(0, 0, [
         function () {
             if (clickCounter === 0) {
@@ -77,21 +90,46 @@ function nowRun(bufferList, extra = 10000, clickCounter = 0, policePosition = -1
             clickCounter += 1;
             starredStep(clickCounter, 100, extra);
             policePosition = policeman(clickCounter, 100, extra);
+            if ((policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01)))) {
+              console.log('status change to true');
+              caughtStatus = true;
+            }
         },
         function () {
             clickCounter += 1;
             starredStep(clickCounter, 100, extra);
+
+            if ((policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01)))) {
+              console.log('status change to true');
+              caughtStatus = true;
+            }
         },
         function () {},
         function () {},
         function () {
-          var audioSlowdown = setInterval(function () {
-            source.playbackRate.value -= 0.05;
-          }, 250);
+          if (caughtStatus) {
+            var audioSlowdown = setInterval(function () {
+              console.log('audioSlowdown because caughtStatus = ' + caughtStatus);
+              source.playbackRate.value -= 0.05;
+            }, 250);
+          } else {
+            console.log('audioFadeOut because caughtStatus = ' + caughtStatus);
+            source.connect(filter);
+            filter.connect(gainFilter);
+            gainFilter.connect(context.destination);
+            gainFilter.gain.value = 1;
+            var audioFadeOut = setInterval(function () {
+              gainFilter.gain.value -= 0.05;
+              console.log(gainFilter.gain.value);
+            }, 250);
+            gainControl.gain.value = 0;
+          }
+
           setTimeout(function () {
             clearInterval(audioSlowdown);
+            clearInterval(audioFadeOut);
             source.stop();
-            caught();
+            caught(caughtStatus);
           }, 5000);
         }], function () {
             return Boolean(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) || (clickCounter > 115);
@@ -168,17 +206,17 @@ function audioTimeout (audio, offset, startedAt) {
     return elapsed;
 }
 
-function slowWalk(clickInterval, audioInterval, eotb, animElements, playing = false, condition = 0, clickCounter = 0, offset = 22) {
+function slowWalk(clickInterval, audioInterval, eotb, animElements, totalClicks = 0, playing = false, condition = 0, clickCounter = 0, offset = 22) {
     var exactInt = clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2);
     alternateClicks(clickInterval, audioInterval, [
                                 function () {
                                     switchGains([eotb['gainConvolver'], eotb['gainControl']],[0,1]);             // at left click
-                                    randomStars(clickCounter);
-                                    fadeloop('#star' + clickCounter, exactInt, exactInt, true, clickCounter);
+                                    randomStars(totalClicks + clickCounter);                                                   // TODO use total clicks somehow
+                                    fadeloop('#star' + (totalClicks + clickCounter), exactInt, exactInt, true, totalClicks + clickCounter);
                                     animateClickIndicator('left', animElements, clickInterval, audioInterval);
                                     if (!playing) {
                                         console.log('left click: ' + offset);
-                                        eotb['source'].start(0, offset);                                        // TODO add a amll fade in to the start of the audio?
+                                        eotb['source'].start(0, offset);                                        // TODO add a small fade in to the start of the audio?
                                         playing = true;
                                         startedAt = context.currentTime - offset;
                                     }
@@ -187,8 +225,8 @@ function slowWalk(clickInterval, audioInterval, eotb, animElements, playing = fa
                                 },
                                 function () {
                                     switchGains([eotb['gainConvolver'], eotb['gainControl']],[0,1]);             // at right click
-                                    randomStars(clickCounter);
-                                    fadeloop('#star' + clickCounter, exactInt, exactInt, true, clickCounter);
+                                    randomStars(totalClicks + clickCounter);
+                                    fadeloop('#star' + (totalClicks + clickCounter), exactInt, exactInt, true, totalClicks + clickCounter);
                                     animateClickIndicator('right', animElements, clickInterval, audioInterval);
                                     if (!playing) {
                                         console.log('right click: ' + offset);
@@ -230,9 +268,10 @@ function slowWalk(clickInterval, audioInterval, eotb, animElements, playing = fa
                                           $('.animElements').fadeTo(500, 1);
                                           $('#instructorLeft').fadeTo(500, 1);
                                           totalClicks = clickCounter;
-                                          slowWalk(300, 700, eotb, animElements, true);
+                                          slowWalk(300, 700, eotb, animElements, totalClicks, true);
                                       } else {
-                                          eotb['source'].stop();
+                                          eotb['source'].stop();                                          // add in low pass filter and fade out instead of .stop()
+                                          clearScreen(0, ['.starField', '#instructorLeft'], 0);
                                           nowRunAudio();
                                       }
                                     }, 1200);
@@ -417,15 +456,15 @@ function starveRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
         if (munchTotal > 15) {
           if (munchTotal > 21) {
             if (munchTotal > 32) {
-                starveCounter = 32;                                             // TODO add in decimal places to avoid pop in audio
+                starveCounter = 32.3;                                             // TODO add in decimal places to avoid pop in audio
             } else {
-              starveCounter = 21;
+              starveCounter = 21.1;
             }
           } else {
-            starveCounter = 15;
+            starveCounter = 15.5;
           }
         } else {
-          starveCounter = 8;
+          starveCounter = 8.4;
         }
       } else {
         starveCounter = 0;
@@ -433,7 +472,7 @@ function starveRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
 
       var audioTimer = setTimeout(function () {
           munchingAudio['starveSource'].connect(context.destination);
-          munchingAudio['starveSource'].start(0, starveCounter);
+          munchingAudio['starveSource'].start(0, starveCounter.toFixed(1));
           intervalStarted = true;
 
           starveInterval = setInterval(function () {                // interval doesn't clear for some reason, try removing array thing and just have normal variable?
@@ -642,9 +681,6 @@ function munchingTime () {
     );
 
     bufferLoader.load();
-    // setTimeout(function () {
-    //   starveRelease();
-    // }, 5500);
   }, 400);
 }
 
