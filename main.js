@@ -352,7 +352,7 @@ function nextScreenLoader (functionToRun, screenPause) {
   var nextScreenLoader = setTimeout(function () {
   //  $(document).unbind('mousedown.screenBreak');
     nextScreenLoader.noBreakCheck = true;
-    clearScreen(100, ['.msg', '.pBreaks'], screenPause);
+    clearScreen(100, ['.msg'], screenPause);
     setTimeout(function () { functionToRun(); }, screenPause + 100);
     }, this.totalDelay);
 
