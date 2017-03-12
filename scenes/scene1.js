@@ -22,7 +22,8 @@ function policeman (clickCounter, clickInterval, extra) {
         $('.chaserSpeech').css({
             'position'  :   'fixed',
             'left'      :   intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
-            'top'       :   '75%'
+            'top'       :   '75%',
+            'font-size' :   '52px'
         }).animate({
             'opacity'   :   '0',
             'left'      :   '-=10%'
@@ -649,6 +650,7 @@ function munchingTime () {
   $('#ansDiv').off('.answering');
   clearScreen(0, ['.selectable', '.msg'], 200);
   stopAudio('shiryu8');
+  // persistentAudio['Shiryu8'].stop();
   setTimeout(function () {
     showLine('You think.', 50, 1);
     showLine('You think hard.', 50, 0, 0, 750);
@@ -669,11 +671,6 @@ function munchingTime () {
     }
     munchingEffects.push('../audio/munching/starvation.mp3');
     munchingEffects.push('../audio/munching/chorus.mp3');
-
-    window.AudioContext = window.AudioContext || window.webkitAudioContext;
-    context = new AudioContext();
-
-    console.log(munchingEffects);
 
     var bufferLoader = new BufferLoader(
         context,
@@ -721,9 +718,7 @@ function scene1starter () {
 
 $(document).ready(function () {
 
-    var context = new AudioContext();
-
-    // munchingTime();
+    // var context = new AudioContext();
 
       setTimeout(function () {
         showLine('Welcome to Moon Prison.', 50, 1);
