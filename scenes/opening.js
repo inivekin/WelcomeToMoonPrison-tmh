@@ -26,6 +26,7 @@ function firstScreen(bufferList) {
 
     console.log('bufferloaded');
     addAudio('shiryu8', './audio/Shiryu8.ogg');
+    $('#shiryu8').get(0).volume = 0.5;
     $('#shiryu8').on('canplay', function () {
         playAudio('shiryu8');
 
@@ -35,7 +36,16 @@ function firstScreen(bufferList) {
         showLine('SOMETHING JUST TERRIBLY AWFUL.', 50, 0, 0, undefined, 'openingText');
         showLine('YOU SHOULD BE ASHAMED.', 50, false, false, 1500, 'openingText');
         showLine('YOU SHOULD BE LOCKED UP.', 100, 0, 0, undefined, 'openingText');
-        nextScreenLoader(loadOpening, 750);
+        setTimeout(function () {
+            console.log('starting audio fade in');
+            var fadeInInterval = setInterval(function () {
+                $('#shiryu8').get(0).volume += 0.05;
+            }, 500);
+            setTimeout(function () {
+                clearInterval(fadeInInterval);
+            }, 4500);
+        }, 10000)
+        nextScreenLoader(loadOpening, 4000);
     });
 }
 
@@ -50,7 +60,7 @@ function loadOpening () {
   $(instruct).attr('class', 'anyText').attr('id', 'instructor'); // .css('opacity', '0.0');
   instruct.innerHTML = '[click to play]';
   $('#bigOldTitle').append(instruct);
-  $('#bigOldTitle').fadeIn(500, function () { $('#instructor').fadeIn(800); });
+  $('#bigOldTitle').fadeIn(1000, function () { $('#instructor').fadeIn(1800); });
 
 
   // generate a number of stars proportionate to viewport size and loop fade-in/fade-out
@@ -61,6 +71,15 @@ function loadOpening () {
   }
   // event listener to continue into game
   $(document).on('mousedown', function () {
+
+      var audioFadeOut = setInterval(function () {
+          $('#shiryu8').get(0).volume -= 0.05;
+      }, 500);
+
+      setTimeout(function () {
+          clearInterval(audioFadeOut);
+      }, 2500);
+
     clearScreen(300, ['#bigOldTitle'], 300);
     var starArray = [];
     for (var i = 0; i < starNum; i++) {

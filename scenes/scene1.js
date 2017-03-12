@@ -519,23 +519,24 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
       j = Math.floor(Math.random() * 5);
 
       if (munchCounter === 1) {
-          munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
-          munchingAudio['gainMunchControl'].connect(context.destination);
-          munchingAudio['munchSource' + k].connect(munchingAudio['convolver']);
-          munchingAudio['convolver'].connect(munchingAudio['gainMunchOverdrive']);
-          munchingAudio['gainMunchOverdrive'].connect(context.destination);
-          munchingAudio['gainMunchOverdrive'].gain.value = 1 - munchTotal / 50;
-          munchingAudio['gainMunchControl'].gain.value = munchTotal / 50;
-          munchingAudio['munchSource' + k].start(0);
-          munchingAudio['munchSource' + k] = context.createBufferSource();
-          munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k];
+          var level1Timeout = setTimeout(function () {
+              munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
+              munchingAudio['gainMunchControl'].connect(context.destination);
+              munchingAudio['munchSource' + k].connect(munchingAudio['convolver']);
+              munchingAudio['convolver'].connect(munchingAudio['gainMunchOverdrive']);
+              munchingAudio['gainMunchOverdrive'].connect(context.destination);
+              munchingAudio['gainMunchOverdrive'].gain.value = 1 - munchTotal / 50;
+              munchingAudio['gainMunchControl'].gain.value = munchTotal / 50;
+              munchingAudio['munchSource' + k].start(0);
+              munchingAudio['munchSource' + k] = context.createBufferSource();
+              munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k];
+          }, 250)
       }
-
       if (munchCounter === 2) {
           munchingAudio['crunchSource' + j].connect(munchingAudio['gainCrunchControl']);
           munchingAudio['gainCrunchControl'].gain.value = 0.5 + munchTotal / 20;
           munchingAudio['gainCrunchControl'].connect(context.destination);
-          munchingAudio['crunchSource' + j].start(0);
+          munchingAudio['crunchSource' + j].start(0.250);
           munchingAudio['crunchSource' + j] = context.createBufferSource();
           munchingAudio['crunchSource' + j].buffer = munchingAudio['bufferList'][7 + j];
       }
@@ -548,7 +549,7 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
             munchingAudio['gainGruntOverdrive'].connect(context.destination);
             munchingAudio['gainGruntControl'].gain.value = munchTotal / 50;
             munchingAudio['gainGruntOverdrive'].gain.value = (munchTotal > 25 ? munchTotal / 75 : 0);
-            munchingAudio['gruntSource' + j].start(0);
+            munchingAudio['gruntSource' + j].start(0.500);
             munchingAudio['gruntSource' + j] = context.createBufferSource();
             munchingAudio['gruntSource' + j].buffer = munchingAudio['bufferList'][12 + j];
         }
@@ -590,7 +591,13 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
       }
   } else {
       $(document).one('keyup', function (e) {
-      starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+          if (munchCounter === 3) {
+              setTimeout(function() {
+                  starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+              }, 2000)
+          } else {
+              starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+          }
   });
   }
 }
@@ -650,7 +657,6 @@ function munchingTime () {
   $('#ansDiv').off('.answering');
   clearScreen(0, ['.selectable', '.msg'], 200);
   stopAudio('shiryu8');
-  // persistentAudio['Shiryu8'].stop();
   setTimeout(function () {
     showLine('You think.', 50, 1);
     showLine('You think hard.', 50, 0, 0, 750);
