@@ -513,24 +513,28 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
           munchCounter = 1;
       }
 
+      if (munchTotal === 0) {
+          var munchBlink = setInterval(function () {
+              $('.afterMessageInstruct').fadeTo(250, 0.1).delay(100).fadeTo(250, 1);
+          }, 600);
+      }
+
       munchTotal += 1;
 
       k = Math.floor(Math.random() * 7);
       j = Math.floor(Math.random() * 5);
 
       if (munchCounter === 1) {
-          var level1Timeout = setTimeout(function () {
               munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
               munchingAudio['gainMunchControl'].connect(context.destination);
               munchingAudio['munchSource' + k].connect(munchingAudio['convolver']);
-              munchingAudio['convolver'].connect(munchingAudio['gainMunchOverdrive']);
-              munchingAudio['gainMunchOverdrive'].connect(context.destination);
-              munchingAudio['gainMunchOverdrive'].gain.value = 1 - munchTotal / 50;
-              munchingAudio['gainMunchControl'].gain.value = munchTotal / 50;
+              munchingAudio['convolver'].connect(munchingAudio['gainMunchConvolver']);
+              munchingAudio['gainMunchConvolver'].connect(context.destination);
+              munchingAudio['gainMunchConvolver'].gain.value = 0.5 - munchTotal / 100;
+              munchingAudio['gainMunchControl'].gain.value = 0.5 + munchTotal / 100;
               munchingAudio['munchSource' + k].start(0);
               munchingAudio['munchSource' + k] = context.createBufferSource();
               munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k];
-          }, 250)
       }
       if (munchCounter === 2) {
           munchingAudio['crunchSource' + j].connect(munchingAudio['gainCrunchControl']);
@@ -549,7 +553,7 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
             munchingAudio['gainGruntOverdrive'].connect(context.destination);
             munchingAudio['gainGruntControl'].gain.value = munchTotal / 50;
             munchingAudio['gainGruntOverdrive'].gain.value = (munchTotal > 25 ? munchTotal / 75 : 0);
-            munchingAudio['gruntSource' + j].start(0.500);
+            munchingAudio['gruntSource' + j].start(0.5);
             munchingAudio['gruntSource' + j] = context.createBufferSource();
             munchingAudio['gruntSource' + j].buffer = munchingAudio['bufferList'][12 + j];
         }
@@ -563,9 +567,6 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
               munchingAudio['chantSource'].connect(munchingAudio['gainChantControl']);
               munchingAudio['gainChantControl'].connect(context.destination);
               // munchingAudio['chantSource'].start(0);
-              var munchBlink = setInterval(function () {
-                  $('.afterMessageInstruct').fadeTo(250, 0.1).delay(100).fadeTo(250, 1);
-              }, 600);
           }
           munchingAudio['gainChantControl'].gain.value = munchTotal / 50;
       }
@@ -594,7 +595,7 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
           if (munchCounter === 3) {
               setTimeout(function() {
                   starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
-              }, 2000)
+              }, 1750);
           } else {
               starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
           }
@@ -622,7 +623,7 @@ function munchingAudio(bufferList) {
     munchingAudio['chantSource'].buffer = bufferList[18];
     munchingAudio['gainChantControl'] = context.createGain();
 
-    munchingAudio['gainMunchOverdrive'] = context.createGain();
+    munchingAudio['gainMunchConvolver'] = context.createGain();
     munchingAudio['gainMunchControl'] = context.createGain();
     munchingAudio['gainCrunchControl'] = context.createGain();
     munchingAudio['gainGruntControl'] = context.createGain();
