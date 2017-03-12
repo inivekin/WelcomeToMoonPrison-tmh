@@ -22,7 +22,8 @@ function policeman (clickCounter, clickInterval, extra) {
         $('.chaserSpeech').css({
             'position'  :   'fixed',
             'left'      :   intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
-            'top'       :   '75%'
+            'top'       :   '75%',
+            'font-size' :   '52px'
         }).animate({
             'opacity'   :   '0',
             'left'      :   '-=10%'
@@ -512,29 +513,34 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
           munchCounter = 1;
       }
 
+      if (munchTotal === 0) {
+          var munchBlink = setInterval(function () {
+              $('.afterMessageInstruct').fadeTo(250, 0.1).delay(100).fadeTo(250, 1);
+          }, 600);
+      }
+
       munchTotal += 1;
 
       k = Math.floor(Math.random() * 7);
       j = Math.floor(Math.random() * 5);
 
       if (munchCounter === 1) {
-          munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
-          munchingAudio['gainMunchControl'].connect(context.destination);
-          munchingAudio['munchSource' + k].connect(munchingAudio['convolver']);
-          munchingAudio['convolver'].connect(munchingAudio['gainMunchOverdrive']);
-          munchingAudio['gainMunchOverdrive'].connect(context.destination);
-          munchingAudio['gainMunchOverdrive'].gain.value = 1 - munchTotal / 50;
-          munchingAudio['gainMunchControl'].gain.value = munchTotal / 50;
-          munchingAudio['munchSource' + k].start(0);
-          munchingAudio['munchSource' + k] = context.createBufferSource();
-          munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k];
+              munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
+              munchingAudio['gainMunchControl'].connect(context.destination);
+              munchingAudio['munchSource' + k].connect(munchingAudio['convolver']);
+              munchingAudio['convolver'].connect(munchingAudio['gainMunchConvolver']);
+              munchingAudio['gainMunchConvolver'].connect(context.destination);
+              munchingAudio['gainMunchConvolver'].gain.value = 0.5 - munchTotal / 100;
+              munchingAudio['gainMunchControl'].gain.value = 0.5 + munchTotal / 100;
+              munchingAudio['munchSource' + k].start(0);
+              munchingAudio['munchSource' + k] = context.createBufferSource();
+              munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k];
       }
-
       if (munchCounter === 2) {
           munchingAudio['crunchSource' + j].connect(munchingAudio['gainCrunchControl']);
           munchingAudio['gainCrunchControl'].gain.value = 0.5 + munchTotal / 20;
           munchingAudio['gainCrunchControl'].connect(context.destination);
-          munchingAudio['crunchSource' + j].start(0);
+          munchingAudio['crunchSource' + j].start(0.250);
           munchingAudio['crunchSource' + j] = context.createBufferSource();
           munchingAudio['crunchSource' + j].buffer = munchingAudio['bufferList'][7 + j];
       }
@@ -547,7 +553,7 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
             munchingAudio['gainGruntOverdrive'].connect(context.destination);
             munchingAudio['gainGruntControl'].gain.value = munchTotal / 50;
             munchingAudio['gainGruntOverdrive'].gain.value = (munchTotal > 25 ? munchTotal / 75 : 0);
-            munchingAudio['gruntSource' + j].start(0);
+            munchingAudio['gruntSource' + j].start(0.5);
             munchingAudio['gruntSource' + j] = context.createBufferSource();
             munchingAudio['gruntSource' + j].buffer = munchingAudio['bufferList'][12 + j];
         }
@@ -561,9 +567,6 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
               munchingAudio['chantSource'].connect(munchingAudio['gainChantControl']);
               munchingAudio['gainChantControl'].connect(context.destination);
               // munchingAudio['chantSource'].start(0);
-              var munchBlink = setInterval(function () {
-                  $('.afterMessageInstruct').fadeTo(250, 0.1).delay(100).fadeTo(250, 1);
-              }, 600);
           }
           munchingAudio['gainChantControl'].gain.value = munchTotal / 50;
       }
@@ -589,7 +592,13 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
       }
   } else {
       $(document).one('keyup', function (e) {
-      starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+          if (munchCounter === 3) {
+              setTimeout(function() {
+                  starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+              }, 1750);
+          } else {
+              starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+          }
   });
   }
 }
@@ -614,7 +623,7 @@ function munchingAudio(bufferList) {
     munchingAudio['chantSource'].buffer = bufferList[18];
     munchingAudio['gainChantControl'] = context.createGain();
 
-    munchingAudio['gainMunchOverdrive'] = context.createGain();
+    munchingAudio['gainMunchConvolver'] = context.createGain();
     munchingAudio['gainMunchControl'] = context.createGain();
     munchingAudio['gainCrunchControl'] = context.createGain();
     munchingAudio['gainGruntControl'] = context.createGain();
@@ -670,11 +679,6 @@ function munchingTime () {
     munchingEffects.push('../audio/munching/starvation.mp3');
     munchingEffects.push('../audio/munching/chorus.mp3');
 
-    window.AudioContext = window.AudioContext || window.webkitAudioContext;
-    context = new AudioContext();
-
-    console.log(munchingEffects);
-
     var bufferLoader = new BufferLoader(
         context,
         munchingEffects,
@@ -721,9 +725,7 @@ function scene1starter () {
 
 $(document).ready(function () {
 
-    var context = new AudioContext();
-
-    // munchingTime();
+    // var context = new AudioContext();
 
       setTimeout(function () {
         showLine('Welcome to Moon Prison.', 50, 1);

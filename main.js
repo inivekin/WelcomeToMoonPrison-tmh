@@ -140,7 +140,7 @@ var showLine = function (stringLine, interval, check, skip, extra, newClass, fad
   var newPara = document.createElement('p');
   newPara.setAttribute('id', 'msg' + count);
   newPara.setAttribute('class', 'msg');
-  if(!(newClass === undefined)) {
+  if(newClass !== undefined) {
       newPara.className += ' ' + newClass;
   }
   $('#txtDiv').append(newPara);
@@ -151,10 +151,29 @@ var showLine = function (stringLine, interval, check, skip, extra, newClass, fad
   curLine[count] = setTimeout(function () { showTextByWord('msg', '#txtDiv', stringLine, 0, interval, count, fadeLength, byWord); }, this.totalDelay);
   newClassArray[count] = newClass;
   stringArray[count] = stringLine;
+
+  blathering(stringArray[count].length, interval, this.totalDelay, count, extra);
+
   this.oldInterval = interval;
   this.totalDelay = this.totalDelay + (stringArray[count].length * this.oldInterval) + (extra === undefined ? 500 : extra);
   this.count = count + 1;
 };
+
+function blathering (stringLength, interval, delay, count, extra) {
+    var i = Math.floor(Math.random() * 3);
+    console.log(delay);
+    console.log(stringLength * interval);
+    setTimeout(function () {
+        persistentAudio['blather' + i] = context.createBufferSource();
+        persistentAudio['blather' + i].buffer = persistentAudio['bufferList'][i];
+        persistentAudio['blather' + i].loop = true;
+        persistentAudio['blather' + i].connect(context.destination);
+        persistentAudio['blather' + i].start(0);                                // TODO add in slower playback for greater interval (http://www.github.com/urtzurd/html-audio/)
+        setTimeout(function () {
+            persistentAudio['blather' + i].stop();
+        }, stringLength * interval);
+    }, delay);
+}
 
 /*
 conditionArray: is an array of conditions to pass for the corresponding arrays to be run
@@ -318,10 +337,10 @@ BufferLoader.prototype.load = function() {
   this.loadBuffer(this.urlList[i], i);
 };
 
-var addAudio = function (id, location, startTime = 0) {
+var addAudio = function (id, location, startTime = 0, loop = false) {
   var audio = document.createElement('audio');
   $('body').append(audio);
-  $(audio).attr('id', id).attr('src', location);
+  $(audio).attr('id', id).attr('src', location).attr('loop', loop);
   audio.currentTime = startTime;
 };
 
