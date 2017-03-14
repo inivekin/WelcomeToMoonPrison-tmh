@@ -110,11 +110,9 @@ function nowRun(bufferList, extra = 10000, clickCounter = 0, policePosition = -1
         function () {
           if (caughtStatus) {
             var audioSlowdown = setInterval(function () {
-              console.log('audioSlowdown because caughtStatus = ' + caughtStatus);
               source.playbackRate.value -= 0.05;
             }, 250);
           } else {
-            console.log('audioFadeOut because caughtStatus = ' + caughtStatus);
             source.connect(filter);
             filter.connect(gainFilter);
             gainFilter.connect(context.destination);
@@ -171,9 +169,6 @@ function starredStep (clickCounter, clickInterval, extra = 0, text = '*', offset
 function switchGains(gainNodeArray, toggleArray) {
     for (var i = 0; i < gainNodeArray.length; i++) {
         gainNodeArray[i].gain.value = toggleArray[i];
-        console.log('switched gains');
-        console.log(gainNodeArray[i]);
-        console.log(gainNodeArray[i].gain.value);
     }
 }
 
@@ -207,10 +202,26 @@ function audioTimeout (audio, offset, startedAt) {
     return elapsed;
 }
 
+function fallingStars (totalClicks, eotb) {
+    for (var i = 0; i < totalClicks; i++) {
+        clearInterval(intId[i]);
+    }
+    setTimeout(function () {
+        for (var i = 0; i < totalClicks; i++) {
+            $('#star' + i).animate({
+                'top' : '100%',
+                'opacity' : '0'
+            }, 2000 * Math.random());
+        }
+        eotb['source'].stop();                                                  // TODO add effect instead of random stop
+    }, 1000);
+}
+
 function slowWalk(clickInterval, audioInterval, eotb, animElements, totalClicks = 0, playing = false, condition = 0, clickCounter = 0, offset = 22) {
     var exactInt = clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2);
     alternateClicks(clickInterval, audioInterval, [
                                 function () {
+                                    stopAudio('EOTBDrone');
                                     switchGains([eotb['gainConvolver'], eotb['gainControl']],[0,1]);             // at left click
                                     randomStars(totalClicks + clickCounter);
                                     fadeloop('#star' + (totalClicks + clickCounter), exactInt, exactInt, true, totalClicks + clickCounter);
@@ -271,8 +282,9 @@ function slowWalk(clickInterval, audioInterval, eotb, animElements, totalClicks 
                                           totalClicks = clickCounter;
                                           slowWalk(300, 700, eotb, animElements, totalClicks, true);
                                       } else {
-                                          eotb['source'].stop();
-                                          clearScreen(0, ['.starField', '#instructorLeft'], 0);
+                                          $('#instructorLeft').fadeTo(500, 0);
+                                          totalClicks += clickCounter;
+                                          fallingStars(totalClicks, eotb);
                                           nowRunAudio();
                                       }
                                     }, 1200);
@@ -422,15 +434,6 @@ function startWalking () {
 }
 
 function munchResult (result) {
-  for (var i = 0; i < 7; i++) {
-    removeAudio('munchEffect' + i, './audio/munching/munch' + i + '.mp3');
-  }
-  for (var j = 0; j < 5; j++) {
-    removeAudio('crunchEffect' + j, './audio/munching/crunch' + j + '.mp3');
-    removeAudio('gruntEffect' + j, './audio/munching/grunt' + j + '.mp3');
-  }
-  removeAudio('starvingEffect', './audio/munching/starvation.mp3');
-
   if (result) {
     clearScreen(300, ['.msg'], 300);
     showLine('', 0, 1);                                                         // added just to clear totalDelay, surely a better way is possible?
@@ -544,7 +547,7 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
           munchingAudio['crunchSource' + j] = context.createBufferSource();
           munchingAudio['crunchSource' + j].buffer = munchingAudio['bufferList'][7 + j];
       }
-      if (munchCounter === 3 && munchTotal % 2 === 0 && munchTotal < 45) {
+      if (munchCounter === 3 && munchTotal < 45) {
         if (Math.random() < munchTotal / 50) {
             munchingAudio['gruntSource' + j].connect(munchingAudio['gainGruntControl']);
             munchingAudio['gainGruntControl'].connect(context.destination);
@@ -562,11 +565,19 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
 
 
 
-      if (munchTotal > 9) {
-          if (munchTotal === 10) {
+      if (munchTotal > 39) {
+          if (munchTotal === 40) {
               munchingAudio['chantSource'].connect(munchingAudio['gainChantControl']);
               munchingAudio['gainChantControl'].connect(context.destination);
               // munchingAudio['chantSource'].start(0);
+              playAudio('EOTBDrone');
+              $('#EOTBDrone').get(0).volume = 0;
+              var audioFadeIn = setInterval(function () {
+                  $('#EOTBDrone').get(0).volume += 0.1;
+              }, 500);
+              setTimeout(function () {
+                  clearInterval(audioFadeIn);
+              }, 5000);
           }
           munchingAudio['gainChantControl'].gain.value = munchTotal / 50;
       }
@@ -587,15 +598,21 @@ function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTo
       }
       if (!stop) {
         $(document).one('keyup', function (e) {
-        starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+            if (munchCounter === 0) {
+                setTimeout(function() {
+                    starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+                }, 500 * (1 - (munchTotal / 50)));
+            } else {
+                starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+            }
       });
       }
   } else {
       $(document).one('keyup', function (e) {
-          if (munchCounter === 3) {
+          if (munchCounter === 0) {
               setTimeout(function() {
                   starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
-              }, 1750);
+              }, 500 * (1 - (munchTotal / 50)));
           } else {
               starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
           }
@@ -622,6 +639,8 @@ function munchingAudio(bufferList) {
     munchingAudio['chantSource'] = context.createBufferSource();
     munchingAudio['chantSource'].buffer = bufferList[18];
     munchingAudio['gainChantControl'] = context.createGain();
+
+    addAudio('EOTBDrone', './audio/EOTBDrone.ogg', 0, true);
 
     munchingAudio['gainMunchConvolver'] = context.createGain();
     munchingAudio['gainMunchControl'] = context.createGain();
@@ -724,8 +743,6 @@ function scene1starter () {
 
 
 $(document).ready(function () {
-
-    // var context = new AudioContext();
 
       setTimeout(function () {
         showLine('Welcome to Moon Prison.', 50, 1);
