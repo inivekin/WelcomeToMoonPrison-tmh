@@ -289,6 +289,57 @@ function answerOptions (options, altOptions, optionCallbacks = false) {
   }, ansDel);
 }
 
+function alternateClicks (clickInterval, audioInterval, clickFunctions, condition, leftClickTimer = 0, rightClickTimer = 0, clickCounter = 0) {
+  $(document).one('mousedown', function (e) {
+    $(document).bind('contextmenu', function (e) {
+      e.preventDefault();
+      return false;
+    });
+    if (e.which === 1) {
+        clickFunctions[0]();
+        clearTimeout(rightClickTimer);
+
+      leftClickTimer = setTimeout(function () {
+        clickFunctions[2]();
+      }, audioInterval);
+
+      if (condition()) {
+          clearTimeout(leftClickTimer);
+          clearTimeout(rightClickTimer);
+          clickFunctions[4]();
+      } else {
+          setTimeout(function () {
+            $(document).unbind('contextmenu');
+            $(document).bind('contextmenu', function (e) {
+              e.preventDefault();
+              clickFunctions[1]();
+              clearTimeout(leftClickTimer);
+
+              rightClickTimer = setTimeout(function () {
+                clickFunctions[3]();
+              }, audioInterval);
+
+              setTimeout(function () {
+                $(document).unbind('contextmenu');
+                if (condition()) {
+                  clearTimeout(leftClickTimer);
+                  clearTimeout(rightClickTimer);
+                  clickFunctions[4]();
+                } else {
+                    alternateClicks (clickInterval, audioInterval, clickFunctions, condition, leftClickTimer, rightClickTimer, clickCounter);
+                }
+                return false;
+              }, clickInterval);
+            });
+          }, clickInterval);
+      }
+    } else {
+        alternateClicks (clickInterval, audioInterval, clickFunctions, condition, leftClickTimer, rightClickTimer, clickCounter);
+    }
+    return false;
+  });
+}
+
 function BufferLoader(context, urlList, callback) {
     console.log('loading buffer');
   this.context = context;
