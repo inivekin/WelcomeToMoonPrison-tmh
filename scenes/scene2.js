@@ -53,9 +53,92 @@ function scene2Correct1()
   pushNoFadeOutText(0, 30, "I love climbing");
   pushNoFadeOutText(0, 40, "So climb with me");
   
-  pushNoFadeOutText(0, 60, "(CLIMBING TO BE IMPLEMENTED)");
-  this.queueFinishFunc = null;
+  this.queueFinishFunc = function () { nextScreenLoader(scene2StartClimb, 0); };
   runFloatingTextQueue();
+}
+
+function scene2StartClimb()
+{
+  var climbContextObject = {}
+  climbContextObject['clickInterval'] = 900;
+  climbContextObject['audioInterval'] = null;
+  climbContextObject['leftClickTimer'] = 0;
+  climbContextObject['rightClickTimer'] = 0;
+  climbContextObject['clickCounter'] = 0;
+  climbContextObject['animElements'] = createClickIndicators();
+  
+  var leftClickFunc = makeScene2ClimbLeftClick(climbContextObject);
+  var rightClickFunc = makeScene2ClimbRightClick(climbContextObject);
+  var failedLeftClickFunc = makeScene2ClimbFailedLeftClick(climbContextObject);
+  var failedRightClickFunc = makeScene2ClimbFailedRightClick(climbContextObject);
+  var goalFunc = makeScene2ClimbGoal(climbContextObject);
+  var scene2ClimbCondition = makeScene2ClimbCondition(climbContextObject);
+  var clickFunctions = [leftClickFunc, rightClickFunc, failedLeftClickFunc,
+                        failedRightClickFunc, goalFunc];
+  
+  alternateClicks(climbContextObject['clickInterval'],
+                  climbContextObject['audioInterval'],
+                  clickFunctions,
+                  scene2ClimbCondition,
+                  climbContextObject['leftClickTimer'],
+                  climbContextObject['rightClickTimer'],
+                  climbContextObject['clickCounter']);
+}
+
+function makeScene2ClimbLeftClick(contextObj)
+{
+  return function () {
+    contextObj['clickCounter'] += 1;
+    animateClickIndicator('left', contextObj['animElements'], contextObj['clickInterval'], contextObj['audioInterval']);
+    contextObj['condition'] = (contextObj['clickCounter'] > ((1700 - contextObj['clickInterval']) / 100));
+  }
+}
+
+function makeScene2ClimbRightClick(contextObj)
+{
+  return function () {
+    contextObj['clickCounter'] += 1;
+    animateClickIndicator('right', contextObj['animElements'], contextObj['clickInterval'], contextObj['audioInterval']);
+    contextObj['condition'] = (contextObj['clickCounter'] > ((1700 - contextObj['clickInterval']) / 100));
+  }
+}
+
+function makeScene2ClimbFailedLeftClick(contextObj)
+{
+  return function () {
+    // TODO What do we need here?
+    }
+}
+
+function makeScene2ClimbFailedRightClick(contextObj)
+{
+  return function () {
+    // TODO What do we need here?
+  }
+}
+
+function makeScene2ClimbGoal(contextObj)
+{
+  return function () {
+    clearScreen(0, ['.selectable', '#instructorLeft', '#instructorRight', '.animElements'], 0);
+    playAudio('forestImpression');
+    pushNoFadeOutText(0, 10, "Now we’re climbing up towards the sky!");
+    pushNoFadeOutText(0, 20, "Freedom’s there!");
+    pushNoFadeOutText(0, 30, "I can see it there!");
+    pushNoFadeOutText(0, 40, "And we’re almost there!");
+    pushNoFadeOutText(0, 50, "To the open air!");
+    pushNoFadeOutText(0, 70, "(FINAL CLIMB TO BE IMPLEMENTED)");
+    
+    this.queueFinishFunc = function () { nextScreenLoader(scene2StartClimb, 0); };
+    runFloatingTextQueue();
+  }
+}
+
+function makeScene2ClimbCondition(contextObj)
+{
+  return function () {
+    return Boolean(contextObj['clickCounter'] > ((1700 - contextObj['clickInterval']) / 100) - 1);
+  }
 }
 
 function scene2Incorrect1()
