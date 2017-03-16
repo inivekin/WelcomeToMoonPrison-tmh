@@ -177,29 +177,6 @@ function switchGains(gainNodeArray, toggleArray) {
     }
 }
 
-function animateClickIndicator (click, animElements, clickInterval, audioInterval) {
-    console.log('animating indicators');
-    if (click === 'left') {
-        for (var i = 0; i < (animElements[0].length + 3) / 4; i++) {
-          $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
-          $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * 0.5 * (clickInterval / 6), 0);
-        }
-        $('#instructorLeft').fadeTo(clickInterval / 6, 0);
-        setTimeout(function () {
-          $('#instructorRight').fadeTo(clickInterval / 2, 1);
-      }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
-  } else if (click === 'right') {
-      for (var j = 0; j < animElements[0].length / 2; j++) {
-        $('#animElem0span' + ((animElements[0].length + 3) / 4 - j - 1)).fadeTo(j * (clickInterval / 6) + audioInterval - clickInterval, 1);
-        $('#animElem0span' + ((animElements[0].length + 3) / 4 + j - 1)).fadeTo(j * 0.5 * (clickInterval / 6), 0);
-      }
-      $('#instructorRight').fadeTo(clickInterval / 6, 0);
-      setTimeout(function () {
-        $('#instructorLeft').fadeTo(clickInterval / 2, 1);
-    }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
-  }
-}
-
 function audioTimeout (audio, offset, startedAt) {
     elapsed = (context.currentTime - startedAt).toFixed(1);                                                 // TODO maybe implement the pausing and starting as its own functions?
     audio['source'].stop();
@@ -279,39 +256,6 @@ function slowWalk(clickInterval, audioInterval, eotb, animElements, totalClicks 
                                 }], function () {
                                     return Boolean(clickCounter > ((1700 - clickInterval) / 100) - 1);
                                 });
-}
-
-function createClickIndicators() {
-    var instructorLeft = document.createElement('span');
-    $('#txtDiv').append(instructorLeft);
-    $(instructorLeft).attr('class', 'anyText').html('[left click]').attr('id', 'instructorLeft').fadeIn(2000);
-
-
-    var animElements = ['* - - - - - _ - - - - - *'],
-        animElemSpans = [];
-    for (var i = 0; i < animElements.length; i++) {
-      animElemSpans[i] = document.createElement('span');
-      $(animElemSpans[i]).attr('id', 'animElem' + i);
-      $(animElemSpans[i]).attr('class', 'animElements');
-      $('#txtDiv').append(animElemSpans[i]);
-      showTextByWord('animElem', '#txtDiv', animElements[i], 0, 0, i);
-
-    }
-
-    var instructorRight = document.createElement('span');
-    $('#txtDiv').append(instructorRight);
-    $(instructorRight).attr('class', 'anyText').html('[right click]').attr('id', 'instructorRight');
-    $(instructorRight).css('opacity', '0');
-
-
-    for (var j = 0; j < (animElements[0].length + 1) / 2; j++) {
-      if (j === ((animElements[0].length + 3) / 4 - 1)) {
-        $('#animElem' + '0' + 'span' + j).fadeIn(2000);// .css('opacity', '1');
-      } else {
-        $('#animElem' + '0' + 'span' + j).css('opacity', '0');
-      }
-    }
-    return animElements;
 }
 
 function scene1Audio (bufferList) {
