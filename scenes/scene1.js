@@ -85,12 +85,14 @@ function munchingAudioPrepare (bufferList) {
         munchingAudio['munchSource' + i] = context.createBufferSource();
         munchingAudio['munchSource' + i].buffer = bufferList[i];
     }
+
     for (var j = 0; j < 5; j++) {
         munchingAudio['crunchSource' + j] = context.createBufferSource();
         munchingAudio['crunchSource' + j].buffer = bufferList[j + 7];
         munchingAudio['gruntSource' + j] = context.createBufferSource();
         munchingAudio['gruntSource' + j].buffer = bufferList[j + 12];
     }
+
     munchingAudio['starveSource'] = context.createBufferSource();
     munchingAudio['starveSource'].buffer = bufferList[17];
 
@@ -122,7 +124,7 @@ function munchingAudioPrepare (bufferList) {
     level: 0.5,                               //0 to 1+, adjusts total output of both wet and dry
     impulse: "./audio/impulses/PrimeShort.wav",    //the path to your impulse response
     bypass: 0
-});
+    });
 
     munchingAudio['convolver'] = convolver;
     munchingAudio['overdrive'] = overdrive;
@@ -131,15 +133,14 @@ function munchingAudioPrepare (bufferList) {
     starveOnRelease(munchingAudio);
 }
 
-function starveOnRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveCounter = 0, starveInterval = 0) {
+function starveOnRelease (munchingAudio, munchCounter = 0, munchTotal = 0) {
   var starveInterval,
+      starveCounter,
       intervalStarted = false;
 
-      starveTimer = setTimeout(function () {
+      var starveTimer = setTimeout(function () {
         munchCounter = 0;
       }, 250);
-
-      console.log(starveCounter);
 
       if (munchTotal > 8) {
         if (munchTotal > 15) {
@@ -186,14 +187,13 @@ function starveOnRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munch
       }
       clearTimeout(starveTimer);
       clearTimeout(audioTimer);
-      munchOnPress (e, munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+      munchOnPress (e, munchingAudio, munchCounter, munchTotal);
     });
 }
 
-function munchOnPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveCounter = 0, starveInterval = 0) {
+function munchOnPress (e, munchingAudio, munchCounter, munchTotal) {
     if (e.which === 32) {
       var stop = 0;
-      clearTimeout(audioTimer);
 
       munchCounter += 1;
 
@@ -275,8 +275,6 @@ function munchOnPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munch
         munchingAudio['gainGruntControl'].gain.value = munchTotal / 25;
         munchingAudio['gainGruntOverdrive'].gain.value = munchTotal / 75;
         munchingAudio['gruntSource' + j].start(0);
-        clearTimeout(starveTimer);
-        clearInterval(starveInterval);
         clearInterval(munchBlink);
         munchingResult(1);
         stop = 1;
@@ -285,10 +283,10 @@ function munchOnPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munch
         $(document).one('keyup', function (e) {
             if (munchCounter === 0) {
                 setTimeout(function() {
-                    starveOnRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+                    starveOnRelease(munchingAudio, munchCounter, munchTotal);
                 }, 500 * (1 - (munchTotal / 50)));
             } else {
-                starveOnRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+                starveOnRelease(munchingAudio, munchCounter, munchTotal);
             }
       });
       }
@@ -296,10 +294,10 @@ function munchOnPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munch
       $(document).one('keyup', function (e) {
           if (munchCounter === 0) {
               setTimeout(function() {
-                  starveOnRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+                  starveOnRelease(munchingAudio, munchCounter, munchTotal);
               }, 500 * (1 - (munchTotal / 50)));
           } else {
-              starveOnRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
+              starveOnRelease(munchingAudio, munchCounter, munchTotal);
           }
   });
   }
@@ -377,39 +375,6 @@ function walkingAudioPrepare (bufferList) {
           var animElements = createClickIndicators();
           walking(900, 1400, eotb, animElements);
       }, 2500);
-}
-
-function createClickIndicators() {
-    var instructorLeft = document.createElement('span');
-    $('#txtDiv').append(instructorLeft);
-    $(instructorLeft).attr('class', 'anyText').html('[left click]').attr('id', 'instructorLeft').fadeIn(2000);
-
-
-    var animElements = ['* - - - - - _ - - - - - *'],
-        animElemSpans = [];
-    for (var i = 0; i < animElements.length; i++) {
-      animElemSpans[i] = document.createElement('span');
-      $(animElemSpans[i]).attr('id', 'animElem' + i);
-      $(animElemSpans[i]).attr('class', 'animElements');
-      $('#txtDiv').append(animElemSpans[i]);
-      showTextByWord('animElem', '#txtDiv', animElements[i], 0, 0, i);
-
-    }
-
-    var instructorRight = document.createElement('span');
-    $('#txtDiv').append(instructorRight);
-    $(instructorRight).attr('class', 'anyText').html('[right click]').attr('id', 'instructorRight');
-    $(instructorRight).css('opacity', '0');
-
-
-    for (var j = 0; j < (animElements[0].length + 1) / 2; j++) {
-      if (j === ((animElements[0].length + 3) / 4 - 1)) {
-        $('#animElem' + '0' + 'span' + j).fadeIn(2000);// .css('opacity', '1');
-      } else {
-        $('#animElem' + '0' + 'span' + j).css('opacity', '0');
-      }
-    }
-    return animElements;
 }
 
 function walking(clickInterval, audioInterval, eotb, animElements, totalClicks = 0, playing = false, condition = 0, clickCounter = 0, offset = 22) {
@@ -512,29 +477,6 @@ function switchGains(gainNodeArray, toggleArray) {
     }
 }
 
-function animateClickIndicator (click, animElements, clickInterval, audioInterval) {
-    console.log('animating indicators');
-    if (click === 'left') {
-        for (var i = 0; i < (animElements[0].length + 3) / 4; i++) {
-          $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
-          $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * 0.5 * (clickInterval / 6), 0);
-        }
-        $('#instructorLeft').fadeTo(clickInterval / 6, 0);
-        setTimeout(function () {
-          $('#instructorRight').fadeTo(clickInterval / 2, 1);
-      }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
-  } else if (click === 'right') {
-      for (var j = 0; j < animElements[0].length / 2; j++) {
-        $('#animElem0span' + ((animElements[0].length + 3) / 4 - j - 1)).fadeTo(j * (clickInterval / 6) + audioInterval - clickInterval, 1);
-        $('#animElem0span' + ((animElements[0].length + 3) / 4 + j - 1)).fadeTo(j * 0.5 * (clickInterval / 6), 0);
-      }
-      $('#instructorRight').fadeTo(clickInterval / 6, 0);
-      setTimeout(function () {
-        $('#instructorLeft').fadeTo(clickInterval / 2, 1);
-    }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
-  }
-}
-
 function audioTimeout (audio, offset, startedAt) {
     elapsed = (context.currentTime - startedAt).toFixed(1);                                                 // TODO maybe implement the pausing and starting as its own functions?
     audio['source'].stop();
@@ -571,8 +513,6 @@ function runningAudioLoad () {
 }
 
 function runningAudioPrepare(bufferList) {
-    showLine('Oh, it was running', 100, 1);
-
     var tuna = new Tuna(context);
 
     var filter = new tuna.Filter({
@@ -603,6 +543,8 @@ function runningAudioPrepare(bufferList) {
 }
 
 function running (runningAudio) {
+    showLine('Oh, it was running', 100, 1);
+
     var audioFadeIn = setInterval(function () {
       runningAudio['gainFilter'].gain.value += 0.05;
     }, 250);

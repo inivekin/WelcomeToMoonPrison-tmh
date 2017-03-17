@@ -152,7 +152,9 @@ var showLine = function (stringLine, interval, check, skip, extra, newClass, fad
   newClassArray[count] = newClass;
   stringArray[count] = stringLine;
 
-  blathering(stringArray[count].length, interval, this.totalDelay, count, extra);
+  if (newClass !== 'openingText' && newClass !== 'openingText openingText1stLine') {
+      blathering(stringArray[count].length, interval, this.totalDelay, count, extra);
+  }
 
   this.oldInterval = interval;
   this.totalDelay = this.totalDelay + (stringArray[count].length * this.oldInterval) + (extra === undefined ? 500 : extra);
