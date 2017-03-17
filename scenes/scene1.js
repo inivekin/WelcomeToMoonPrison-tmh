@@ -190,6 +190,7 @@ function fallingStars (totalClicks, eotb) {
                 'opacity' : '0'
             }, 2000 * Math.random());
         }
+        clearScreen(0, ['.starField', '.msg'], 1900);
         eotb['source'].stop();                                                  // TODO add effect instead of random stop
     }, 1000);
 }
