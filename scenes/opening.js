@@ -26,7 +26,7 @@ function firstScreen(bufferList) {
 
     console.log('bufferloaded');
     addAudio('shiryu8', './audio/Shiryu8.ogg');
-    $('#shiryu8').get(0).volume = 0.5;
+    $('#shiryu8').get(0).volume = 0.75;
     $('#shiryu8').on('canplay', function () {
         playAudio('shiryu8');
 
@@ -43,7 +43,7 @@ function firstScreen(bufferList) {
             }, 500);
             setTimeout(function () {
                 clearInterval(fadeInInterval);
-            }, 4500);
+            }, 2400);
         }, 10000)
         nextScreenLoader(loadOpening, 4000);
     });
@@ -67,7 +67,7 @@ function loadOpening () {
   var starNum = $(window).width() * $(window).height() * 5.0e-5;
   for (var i = 0; i < starNum; i++) {
     randomStars(i);
-    fadeloop ('#star' + i, 1400, 1000, true, starNum);
+    fadeloop ('#star' + i, 1400, 1000, true, i);
   }
   // event listener to continue into game
   $(document).on('mousedown', function () {
@@ -127,8 +127,7 @@ function fadeloop (star, timeOut, timeIn, loop, count) {
     };
     fn();
     if (loop) {
-      this.counter = (this.counter === undefined ? 0 : this.counter + 1);
-      intId[this.counter] = setInterval(fn, timeOut + timeIn + 100);
+      intId[count] = setInterval(fn, timeOut + timeIn + 100);
       // TODO sometimes stars do not fade right because setInterval lasts too long for fade zone before clearInterval can stop it.
       // fix by making interval shorter, preferably around 500-1000, though need to make sure fadeTos fade to close decimal so flickering isn't too much
     }
