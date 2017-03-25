@@ -1,5 +1,9 @@
-var intervalCounter;
-var policeTimer;
+var policeIntervalCounter, birdIntervalCounter = [];
+var policeTimer, birdInterval = [], cawInterval = [], birdPosition = [];
+var birdInfo = {};
+var currentPosition;
+var buttonInstructDetector = [];
+
 
 $(document).ready(function () {
     scene1Screen1();
@@ -196,11 +200,9 @@ function munchOnPress (e, munchingAudio, munchCounter, munchTotal) {
       var stop = 0;
 
       munchCounter += 1;
-
       if (munchCounter > 3) {
           munchCounter = 1;
       }
-
       if (munchTotal === 0) {
           var munchBlink = setInterval(function () {
               $('.afterMessageInstruct').fadeTo(250, 0.5).delay(100).fadeTo(250, 1);
@@ -213,42 +215,17 @@ function munchOnPress (e, munchingAudio, munchCounter, munchTotal) {
       j = Math.floor(Math.random() * 5);
 
       if (munchCounter === 1) {
-              munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
-              munchingAudio['gainMunchControl'].connect(context.destination);
-              munchingAudio['munchSource' + k].connect(munchingAudio['convolver']);
-              munchingAudio['convolver'].connect(munchingAudio['gainMunchConvolver']);
-              munchingAudio['gainMunchConvolver'].connect(context.destination);
-              munchingAudio['gainMunchConvolver'].gain.value = 0.5 - munchTotal / 100;
-              munchingAudio['gainMunchControl'].gain.value = 0.5 + munchTotal / 100;
-              munchingAudio['munchSource' + k].start(0);
-              munchingAudio['munchSource' + k] = context.createBufferSource();
-              munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k];
+          playMunchSound(munchingAudio, munchTotal, k);
       }
       if (munchCounter === 2) {
-          munchingAudio['crunchSource' + j].connect(munchingAudio['gainCrunchControl']);
-          munchingAudio['gainCrunchControl'].gain.value = 0.5 + munchTotal / 20;
-          munchingAudio['gainCrunchControl'].connect(context.destination);
-          munchingAudio['crunchSource' + j].start(0.250);
-          munchingAudio['crunchSource' + j] = context.createBufferSource();
-          munchingAudio['crunchSource' + j].buffer = munchingAudio['bufferList'][7 + j];
+          playCrunchSound(munchingAudio, munchTotal, j);
       }
       if (munchCounter === 3 && munchTotal < 45) {
         if (Math.random() < munchTotal / 50) {
-            munchingAudio['gruntSource' + j].connect(munchingAudio['gainGruntControl']);
-            munchingAudio['gainGruntControl'].connect(context.destination);
-            munchingAudio['gruntSource' + j].connect(munchingAudio['overdrive']);
-            munchingAudio['overdrive'].connect(munchingAudio['gainGruntOverdrive']);
-            munchingAudio['gainGruntOverdrive'].connect(context.destination);
-            munchingAudio['gainGruntControl'].gain.value = munchTotal / 50;
-            munchingAudio['gainGruntOverdrive'].gain.value = (munchTotal > 25 ? munchTotal / 75 : 0);
-            munchingAudio['gruntSource' + j].start(0.5);
-            munchingAudio['gruntSource' + j] = context.createBufferSource();
-            munchingAudio['gruntSource' + j].buffer = munchingAudio['bufferList'][12 + j];
+            playGruntSound(munchingAudio, munchTotal, j);
         }
         munchCounter = 0;
       }
-
-
 
       if (munchTotal > 39) {
           if (munchTotal === 40) {
@@ -267,14 +244,7 @@ function munchOnPress (e, munchingAudio, munchCounter, munchTotal) {
           munchingAudio['gainChantControl'].gain.value = munchTotal / 50;
       }
       if (munchTotal > 50) {
-        munchingAudio['gruntSource' + j].connect(munchingAudio['gainGruntControl']);
-        munchingAudio['gainGruntControl'].connect(context.destination);
-        munchingAudio['gruntSource' + j].connect(munchingAudio['overdrive']);
-        munchingAudio['overdrive'].connect(munchingAudio['gainGruntOverdrive']);
-        munchingAudio['gainGruntOverdrive'].connect(context.destination);
-        munchingAudio['gainGruntControl'].gain.value = munchTotal / 25;
-        munchingAudio['gainGruntOverdrive'].gain.value = munchTotal / 75;
-        munchingAudio['gruntSource' + j].start(0);
+        playGruntSound(munchingAudio, munchTotal, j);
         clearInterval(munchBlink);
         munchingResult(1);
         stop = 1;
@@ -301,6 +271,41 @@ function munchOnPress (e, munchingAudio, munchCounter, munchTotal) {
           }
   });
   }
+}
+
+function playMunchSound (munchingAudio, munchTotal, k) {
+    munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
+    munchingAudio['gainMunchControl'].connect(context.destination);
+    munchingAudio['munchSource' + k].connect(munchingAudio['convolver']);
+    munchingAudio['convolver'].connect(munchingAudio['gainMunchConvolver']);
+    munchingAudio['gainMunchConvolver'].connect(context.destination);
+    munchingAudio['gainMunchConvolver'].gain.value = 0.5 - munchTotal / 100;
+    munchingAudio['gainMunchControl'].gain.value = 0.5 + munchTotal / 100;
+    munchingAudio['munchSource' + k].start(0);
+    munchingAudio['munchSource' + k] = context.createBufferSource();
+    munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k];
+}
+
+function playCrunchSound (munchingAudio, munchTotal, j) {
+    munchingAudio['crunchSource' + j].connect(munchingAudio['gainCrunchControl']);
+    munchingAudio['gainCrunchControl'].gain.value = 0.5 + munchTotal / 20;
+    munchingAudio['gainCrunchControl'].connect(context.destination);
+    munchingAudio['crunchSource' + j].start(0.250);
+    munchingAudio['crunchSource' + j] = context.createBufferSource();
+    munchingAudio['crunchSource' + j].buffer = munchingAudio['bufferList'][7 + j];
+}
+
+function playGruntSound (munchingAudio, munchTotal, j) {
+    munchingAudio['gruntSource' + j].connect(munchingAudio['gainGruntControl']);
+    munchingAudio['gainGruntControl'].connect(context.destination);
+    munchingAudio['gruntSource' + j].connect(munchingAudio['overdrive']);
+    munchingAudio['overdrive'].connect(munchingAudio['gainGruntOverdrive']);
+    munchingAudio['gainGruntOverdrive'].connect(context.destination);
+    munchingAudio['gainGruntControl'].gain.value = munchTotal / 50;
+    munchingAudio['gainGruntOverdrive'].gain.value = (munchTotal > 25 ? munchTotal / 75 : 0);
+    munchingAudio['gruntSource' + j].start(0.5);
+    munchingAudio['gruntSource' + j] = context.createBufferSource();
+    munchingAudio['gruntSource' + j].buffer = munchingAudio['bufferList'][12 + j];
 }
 
 function munchingResult (result) {
@@ -458,7 +463,7 @@ function starredStep (clickCounter, clickInterval, extra = 0, text = '*', offset
     $(stepStar).css({
       'display'  : 'block',
       'position' : 'absolute',
-      'left'     : clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - (offset * $(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+      'left'     : (clickCounter - offset) * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
       'bottom'   : '2%',
       'font-size': ($(window).width() / (1700 - clickInterval)) * 20 + 'px'
   }).appendTo('body').html(text).attr('class', 'anyText').attr('id', 'starStep' + clickCounter).animate({
@@ -495,7 +500,7 @@ function fallingStars (totalClicks, eotb) {
                 'opacity' : '0'
             }, 2000 * Math.random());
         }
-        clearScreen(0, ['starField', 'msg'], 1900);
+        clearScreen(0, ['.starField', '.msg'], 1900);
         eotb['source'].stop();                                                  // TODO add effect instead of random stop
     }, 1000);
 }
@@ -557,7 +562,10 @@ function running (runningAudio) {
     var caughtStatus = false;
     var clickCounter = 0;
     var extra = 10000;
-    var policePosition = -1;
+    var policePosition = -1, birdPosition = [];
+    var birdCounter = 0;
+
+    var windowRatio = ($(window).width() / ((1850 - 100 + extra) * 0.01));
 
   setTimeout(function () {
     alternateClicks(0, 0, [
@@ -567,21 +575,19 @@ function running (runningAudio) {
                 runningAudio['filter'].disconnect();
             }
             clickCounter += 1;
+            currentPosition = (clickCounter - 1) * ($(window).width() / ((1850 - 100 + extra) * 0.01));
             starredStep(clickCounter, 100, extra);
-            policePosition = policeman(clickCounter, 100, extra);
-            if ((policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01)))) {
-              console.log('status change to true');
-              caughtStatus = true;
-            }
+            policePosition = policeman(clickCounter, 100, extra);               // occurs on certain numbers of clicks
+            birdInfo = bird(currentPosition, 100, extra, birdCounter, birdInfo);                      // occurs randomly
+            birdCounter = birdInfo['birdCounter'];
+
+            caughtStatus = checkPolicePosition(clickCounter, policePosition, extra);
         },
         function () {
             clickCounter += 1;
             starredStep(clickCounter, 100, extra);
 
-            if ((policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01)))) {
-              console.log('status change to true');
-              caughtStatus = true;
-            }
+            caughtStatus = checkPolicePosition(clickCounter, policePosition, extra);
         },
         function () {},
         function () {},
@@ -598,7 +604,6 @@ function running (runningAudio) {
             runningAudio['gainFilter'].gain.value = 1;
             var audioFadeOut = setInterval(function () {
               runningAudio['gainFilter'].gain.value -= 0.05;
-              console.log(runningAudio['gainFilter'].gain.value);
             }, 250);
             runningAudio['gainControl'].gain.value = 0;
           }
@@ -618,11 +623,11 @@ function running (runningAudio) {
 function policeman (clickCounter, clickInterval, extra) {
     if (clickCounter === 1) {
         // insert audio hey freeze!
-        intervalCounter = 0;
+        policeIntervalCounter = 0;
         showLine('FREEZE!', 50, 0, 1, 0, 'chaserSpeech');
         $('.chaserSpeech').css({
             'position'  :   'fixed',
-            'left'      :   intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+            'left'      :   policeIntervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
             'top'       :   '75%',
             'font-size' :   '52px'
         }).animate({
@@ -631,21 +636,121 @@ function policeman (clickCounter, clickInterval, extra) {
         }, 2000);
 
         policeTimer = setInterval(function() {
-            intervalCounter += 1;
-            starredStep(intervalCounter, clickInterval, extra, '^', 5);
+            policeIntervalCounter += 1;
+            starredStep(policeIntervalCounter, clickInterval, extra, '^', 5);
         }, 250);
     } else if (clickCounter === 15) {
         showLine('BANG!', 50, 0, 1, 0, 'chaserSpeech');
         $('.chaserSpeech').css({
             'position'  :   'fixed',
-            'left'      :   intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+            'left'      :   policeIntervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
             'top'       :   '75%'
         }).animate({
             'opacity'   :   '0',
             'left'      :   '-=10%'
         }, 2000);
     }
-    return (intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
+    return (policeIntervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
+}
+
+function checkPolicePosition (clickCounter, policePosition, extra) {
+    if ((policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01)))) {
+      return true;
+  } else {
+      return false;
+  }
+}
+
+function bird(clickCounter, clickInterval, extra, birdCounter, birdInfo) {
+    if (Math.random() > 0.90) {
+        birdCounter += 1;
+        birdInfo = setBirdIntervals(birdCounter, clickInterval, extra, birdInfo, currentPosition);
+    }
+    // console.log(birdCounter);
+    // console.log(birdInfo);
+    // console.log(birdIntervalCounter);
+    for (var i = 0; i < birdCounter; i++) {
+        birdInfo['birdPosition'][i] = birdIntervalCounter[i] * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01))
+    }
+    birdInfo['birdCounter'] = birdCounter;
+    return birdInfo;
+}
+
+function setBirdIntervals(birdCounter, clickInterval, extra, birdInfo, clickCounter) {
+    birdIntervalCounter[birdCounter] = 0;
+
+    birdInterval[birdCounter] = setInterval(function () {
+        birdIntervalCounter[birdCounter] += 1;
+        buttonInstructDetector[birdCounter] = (buttonInstructDetector[birdCounter] === undefined ? false : buttonInstructDetector[birdCounter])
+        checkBirdPosition(clickCounter, birdInfo, 100, extra);
+    }, 250);
+
+    cawInterval[birdCounter] = setInterval(function () {
+        showLine('[caw]', 50, 0, 1, 0, 'birdSpeech' + birdCounter);
+        $('.birdSpeech' + birdCounter).css({
+            'position'  :   'fixed',
+            'right'      :   birdIntervalCounter[birdCounter] * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+            'top'       :   '70%',
+            'font-size' :   '10px'
+        }).animate({
+            'opacity'   :   '0',
+            'right'      :   '+=10%',
+            'font-size' :   '+=10px'
+        }, 1500)
+        birdPosition[birdCounter] = birdIntervalCounter[birdCounter] * ($(window).width() / ((1850 - clickInterval + extra) * 0.01));
+        setTimeout(function () {
+            clearScreen(0, ['.birdSpeech' + birdCounter], 0);
+        }, 1500);
+    }, 2000)
+    return {
+        birdInterval: birdInterval,
+        cawInterval: cawInterval,
+        birdIntervalCounter: birdIntervalCounter,
+        birdPosition: birdPosition,
+        buttonInstructDetector: buttonInstructDetector
+    }
+}
+
+function checkBirdPosition (clickCounter, birdInfo, clickInterval, extra) {
+    for (var i = 1; i < birdInfo['birdCounter'] + 1; i++) {
+        if ((($(window).width() - birdInfo['birdPosition'][i]) < currentPosition + 250) && (birdInfo['buttonInstructDetector'][i] === false)) {
+            birdInfo['buttonInstructDetector'][i] = true;
+            showLine('[spacebar]', 50, 0, 1, 0, 'buttonPressInstruct' + i);
+            $('.buttonPressInstruct' + i).css({
+                'position'  :   'fixed',
+                'right'      :   birdInfo['birdPosition'][i] + 'px',
+                'top'       :   '65%',
+                'font-size' :   '20px'
+            }).animate({
+                'opacity'   :   '0',
+                'right'      :   '+=10%'
+            }, 1500);
+
+            checkForSpacebarPress(clickInterval, i);
+        }
+
+        if (($(window).width() - birdInfo['birdPosition'][i]) < currentPosition - 250) {
+            clearInterval(cawInterval[i]);
+            clearInterval(birdInterval[i]);
+            clearScreen(0, ['.buttonPressInstruct' + i], 0);
+            $(document).unbind('keydown.bird' + i);
+        }
+    }
+}
+
+function checkForSpacebarPress (clickInterval, i) {
+    $(document).bind('keydown.bird' + i, function (e) {
+        if (e.which === 32) {
+            clearInterval(cawInterval[i]);
+            clearInterval(birdInterval[i]);
+            clearScreen(0, ['.buttonPressInstruct' + i], 0);
+
+
+            // TODO implement speed boost properly
+
+            // TODO play munching sound
+        }
+    });
 }
 
 function caught (caughtStatus) {
@@ -653,6 +758,9 @@ function caught (caughtStatus) {
       e.preventDefault();
       return false;
     });
+    for (var i = 0; i < cawInterval.length; i++) {
+        clearInterval(cawInterval[i]);
+    }
     if (caughtStatus) {
         clearInterval(policeTimer);
     } else {
@@ -664,7 +772,7 @@ function caught (caughtStatus) {
     setTimeout(function () {
         $(document).unbind('contextmenu');
         loadScene('/scenes/scene2.js');
-    }, 1200);
+    }, 2000);
 }
 
 // function hideOnClick (id, message) {
