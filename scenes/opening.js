@@ -1,8 +1,4 @@
 $(document).ready(function () {
-
-    window.AudioContext = window.AudioContext || window.webkitAudioContext;
-    context = new AudioContext();
-
     openingAudio();
 });
 
