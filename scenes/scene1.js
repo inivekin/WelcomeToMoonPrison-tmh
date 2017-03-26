@@ -6,7 +6,9 @@ var buttonInstructDetector = [];
 
 
 $(document).ready(function () {
-    scene1Screen1();
+    // scene1Screen1();
+
+    runningAudioLoad();
 });
 
 function scene1Screen1 () {
@@ -560,12 +562,13 @@ function running (runningAudio) {
     runningAudio['source'].start(0, 12);
 
     var caughtStatus = false;
-    var clickCounter = 0;
+    var clickCounter = 0, clickIncrement = 1;
     var extra = 10000;
     var policePosition = -1, birdPosition = [];
     var birdCounter = 0;
+    var clickInterval = 100
 
-    var windowRatio = ($(window).width() / ((1850 - 100 + extra) * 0.01));
+    var windowRatio = ($(window).width() / ((1850 - clickInterval + extra) * 0.01));
 
   setTimeout(function () {
     alternateClicks(0, 0, [
@@ -574,20 +577,29 @@ function running (runningAudio) {
                 runningAudio['gainControl'].gain.value = 1;
                 runningAudio['filter'].disconnect();
             }
-            clickCounter += 1;
-            currentPosition = (clickCounter - 1) * ($(window).width() / ((1850 - 100 + extra) * 0.01));
-            starredStep(clickCounter, 100, extra);
-            policePosition = policeman(clickCounter, 100, extra);               // occurs on certain numbers of clicks
-            birdInfo = bird(currentPosition, 100, extra, birdCounter, birdInfo);                      // occurs randomly
+            clickCounter += clickIncrement;
+            currentPosition = (clickCounter - 1) * ($(window).width() / ((1850 - clickInterval + extra) * 0.01));
+            starredStep(clickCounter, clickInterval, extra);
+            policePosition = policeman(clickCounter, clickInterval, extra);               // occurs on certain numbers of clicks
+            birdInfo = bird(currentPosition, clickInterval, extra, birdCounter, birdInfo);                      // occurs randomly
             birdCounter = birdInfo['birdCounter'];
 
             caughtStatus = checkPolicePosition(clickCounter, policePosition, extra);
+
+            if (birdInfo['eating'] === true) {
+                clickIncrement += 1;
+                starredStep(clickCounter, clickInterval, extra);
+                birdInfo['eating'] = false;
+                setTimeout(function () {
+                    clickIncrement = 1;
+                }, 1000);
+            }
         },
         function () {
             clickCounter += 1;
-            starredStep(clickCounter, 100, extra);
+            starredStep(clickCounter, clickInterval, extra);
 
-            caughtStatus = checkPolicePosition(clickCounter, policePosition, extra);
+            caughtStatus = checkPolicePosition(clickCounter, policePosition, extra, clickInterval);
         },
         function () {},
         function () {},
@@ -615,7 +627,7 @@ function running (runningAudio) {
             caught(caughtStatus);
           }, 5000);
         }], function () {
-            return Boolean(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) || (clickCounter > 115);
+            return Boolean(policePosition > clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01))) || (clickCounter > 115);
         });
   }, 1100);
 }
@@ -653,8 +665,8 @@ function policeman (clickCounter, clickInterval, extra) {
     return (policeIntervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
 }
 
-function checkPolicePosition (clickCounter, policePosition, extra) {
-    if ((policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01)))) {
+function checkPolicePosition (clickCounter, policePosition, extra, clickInterval) {
+    if ((policePosition > clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)))) {
       return true;
   } else {
       return false;
@@ -662,7 +674,7 @@ function checkPolicePosition (clickCounter, policePosition, extra) {
 }
 
 function bird(clickCounter, clickInterval, extra, birdCounter, birdInfo) {
-    if (Math.random() > 0.90) {
+    if (Math.random() > 0.95) {
         birdCounter += 1;
         birdInfo = setBirdIntervals(birdCounter, clickInterval, extra, birdInfo, currentPosition);
     }
@@ -682,7 +694,7 @@ function setBirdIntervals(birdCounter, clickInterval, extra, birdInfo, clickCoun
     birdInterval[birdCounter] = setInterval(function () {
         birdIntervalCounter[birdCounter] += 1;
         buttonInstructDetector[birdCounter] = (buttonInstructDetector[birdCounter] === undefined ? false : buttonInstructDetector[birdCounter])
-        checkBirdPosition(clickCounter, birdInfo, 100, extra);
+        checkBirdPosition(clickCounter, birdInfo, clickInterval, extra);
     }, 250);
 
     cawInterval[birdCounter] = setInterval(function () {
@@ -702,18 +714,22 @@ function setBirdIntervals(birdCounter, clickInterval, extra, birdInfo, clickCoun
             clearScreen(0, ['.birdSpeech' + birdCounter], 0);
         }, 1500);
     }, 2000)
+
+    var eating = false;
+
     return {
         birdInterval: birdInterval,
         cawInterval: cawInterval,
         birdIntervalCounter: birdIntervalCounter,
         birdPosition: birdPosition,
-        buttonInstructDetector: buttonInstructDetector
+        buttonInstructDetector: buttonInstructDetector,
+        eating: eating
     }
 }
 
 function checkBirdPosition (clickCounter, birdInfo, clickInterval, extra) {
     for (var i = 1; i < birdInfo['birdCounter'] + 1; i++) {
-        if ((($(window).width() - birdInfo['birdPosition'][i]) < currentPosition + 250) && (birdInfo['buttonInstructDetector'][i] === false)) {
+        if ((($(window).width() - birdInfo['birdPosition'][i]) < currentPosition + 100) && (birdInfo['buttonInstructDetector'][i] === false)) {
             birdInfo['buttonInstructDetector'][i] = true;
             showLine('[spacebar]', 50, 0, 1, 0, 'buttonPressInstruct' + i);
             $('.buttonPressInstruct' + i).css({
@@ -722,28 +738,37 @@ function checkBirdPosition (clickCounter, birdInfo, clickInterval, extra) {
                 'top'       :   '65%',
                 'font-size' :   '20px'
             }).animate({
-                'opacity'   :   '0',
+                'opacity'   :   '50',
                 'right'      :   '+=10%'
             }, 1500);
-
-            checkForSpacebarPress(clickInterval, i);
+            var currentBird = i;
+            checkForSpacebarPress(clickCounter, clickInterval, extra, currentBird);
         }
 
-        if (($(window).width() - birdInfo['birdPosition'][i]) < currentPosition - 250) {
+        if (($(window).width() - birdInfo['birdPosition'][i]) < currentPosition - 150) {
             clearInterval(cawInterval[i]);
             clearInterval(birdInterval[i]);
             clearScreen(0, ['.buttonPressInstruct' + i], 0);
-            $(document).unbind('keydown.bird' + i);
+            $(document).off('keydown.bird' + i);
         }
     }
 }
 
-function checkForSpacebarPress (clickInterval, i) {
-    $(document).bind('keydown.bird' + i, function (e) {
+function checkForSpacebarPress (clickCounter, clickInterval, extra, currentBird) {
+    $(document).on('keydown.bird' + currentBird, function (e) {
         if (e.which === 32) {
-            clearInterval(cawInterval[i]);
-            clearInterval(birdInterval[i]);
-            clearScreen(0, ['.buttonPressInstruct' + i], 0);
+            $(document).off('keydown.bird' + currentBird);
+            clearInterval(cawInterval[currentBird]);
+            clearInterval(birdInterval[currentBird]);
+            clearScreen(0, ['.buttonPressInstruct' + currentBird], 0);
+
+            birdInfo['eating'] = true;
+
+            // for (var i = 0; i < 4; i++) {
+            //     // console.log(clickCounter);
+            //     // clickCounter += 4;
+            //     // starredStep(clickCounter, clickInterval, extra);
+            // }
 
 
             // TODO implement speed boost properly
@@ -771,7 +796,7 @@ function caught (caughtStatus) {
     clearScreen(300, ['.chaserSpeech', '.anyText', '.msg'], 700);
     setTimeout(function () {
         $(document).unbind('contextmenu');
-        loadScene('/scenes/scene2.js');
+        // loadScene('/scenes/scene2.js');
     }, 2000);
 }
 

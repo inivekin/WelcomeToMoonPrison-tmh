@@ -152,7 +152,7 @@ var showLine = function (stringLine, interval, check, skip, extra, newClass, fad
   stringArray[count] = stringLine;
 
   if (newClass !== 'openingText' && newClass !== 'openingText openingText1stLine') {
-     blathering(stringArray[count].length, interval, this.totalDelay, count, extra);
+    //  blathering(stringArray[count].length, interval, this.totalDelay, count, extra);
   }
 
   this.oldInterval = interval;
@@ -500,7 +500,7 @@ function loadScene (sceneScriptFile) {
 function gameStart () {
     window.AudioContext = window.AudioContext || window.webkitAudioContext;
     context = new AudioContext();
-  loadScene('/scenes/opening.js');
+  loadScene('/scenes/scene1.js');
 }
 
 window.onload = gameStart;
