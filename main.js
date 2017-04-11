@@ -4,7 +4,7 @@ var newClassArray = [];
 var curLine = [];
 var screenBreakCheck = false;
 var context;
-var bufferLoader;                          // evil globals to be removed
+var bufferLoader;                          // evil globals to be fixed
 
 /*
 screenPause parameter: time to pause before fadeTime - default 500
@@ -14,7 +14,6 @@ fadeTime: time for elements to fade out
 screenPause tends to be equal or sometimes greater than fadeTime slightly
 */
 function clearScreen (screenPause = 500, element = ['.msg'], fadeTime = 500) {
-  console.log('clearing screen');
   setTimeout(function (){
       for (var i = 0; i < element.length; i++) {
         $(element[i]).fadeOut(fadeTime);
@@ -47,7 +46,7 @@ var revealByLetter = function (targetChild, stringWordArray, interval, i, string
 }, interval * stringLength);                                         // delays word
 };
 
-var revealByWord = function(targetChild, stringWordArray, interval, stringLength, count, byWord = 0, fadeLength = 0) {
+var revealByWord = function(targetChild, stringWordArray, interval, stringLength, count, fadeLength = 0, byWord = 0) {
   for (var i = 0; i < stringWordArray.length; i++) {
     if (!byWord) {
       revealByLetter(targetChild, stringWordArray, interval, i, stringLength, count, fadeLength);  // to continue to letter reveal
@@ -152,8 +151,8 @@ var showLine = function (stringLine, interval, check, skip, extra, newClass, fad
   newClassArray[count] = newClass;
   stringArray[count] = stringLine;
 
-  if(newClass !== 'openingText' && newClass !== 'openingText openingText1stLine') {
-      blathering(stringArray[count].length, interval, this.totalDelay, count, extra);
+  if (newClass !== 'openingText' && newClass !== 'openingText openingText1stLine' && byWord !== 1) {
+     blathering(stringArray[count].length, interval, this.totalDelay, count, extra);
   }
 
   this.oldInterval = interval;
@@ -163,8 +162,6 @@ var showLine = function (stringLine, interval, check, skip, extra, newClass, fad
 
 function blathering (stringLength, interval, delay, count, extra) {
     var i = Math.floor(Math.random() * 3);
-    console.log(delay);
-    console.log(stringLength * interval);
     setTimeout(function () {
         persistentAudio['blather' + i] = context.createBufferSource();
         persistentAudio['blather' + i].buffer = persistentAudio['bufferList'][i];
@@ -184,10 +181,8 @@ messageArray: 1 diimensional array, will print a message for each corresponding 
 */
 function switchOnClick (conditionArray, fadeTargetArray, messageArray, callToFunction) {
     for (var i = 0; i < conditionArray.length; i++) {
-      console.log('conditionArray[i]: ' + conditionArray[i]);
       if(conditionArray[i]) {
       for (var j = 0; j < fadeTargetArray.length; j++) {
-        console.log('fadeTargetArray[i][j]' + fadeTargetArray[i][j]);
         $('#ansOp' + j).fadeTo(100, fadeTargetArray[i][j]);
         }
         if(!(messageArray[i] === undefined)) {
@@ -207,7 +202,6 @@ function switchOnClick (conditionArray, fadeTargetArray, messageArray, callToFun
 
 
 function answerActive(answer, option) {
-    console.log(answer);
     if($(answer).css('opacity') > 0) {
     $('<span id="selector" class="anyText">_</span>').insertBefore($(answer).children(":first-child"));
     }
@@ -343,7 +337,6 @@ function alternateClicks (clickInterval, audioInterval, clickFunctions, conditio
 }
 
 function animateClickIndicator(click, animElements, clickInterval, audioInterval) {
-  console.log('animating indicators');
   if (click === 'left') {
     for (var i = 0; i < (animElements[0].length + 3) / 4; i++) {
       $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
@@ -505,6 +498,8 @@ function loadScene (sceneScriptFile) {
 }
 
 function gameStart () {
+    window.AudioContext = window.AudioContext || window.webkitAudioContext;
+    context = new AudioContext();
   loadScene('/scenes/opening.js');
 }
 

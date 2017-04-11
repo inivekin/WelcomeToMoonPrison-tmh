@@ -1,207 +1,231 @@
-var intervalCounter;
-var policeTimer;
+var policeIntervalCounter, birdIntervalCounter = [];
+var policeTimer, birdInterval = [], cawInterval = [], birdPosition = [];
+var birdInfo = {};
+var currentPosition;
+var buttonInstructDetector = [];
 
-function caught () {
-    $(document).bind('contextmenu', function (e) {
-      e.preventDefault();
-      return false;
-    });
-    clearInterval(policeTimer);
-    clearScreen(300, ['.chaserSpeech', '.anyText', '.msg'], 700);
+
+$(document).ready(function () {
+    scene1Screen1();
+});
+
+function scene1Screen1 () {
     setTimeout(function () {
-        $(document).unbind('contextmenu');
-        loadScene('/scenes/scene2.js');
-    }, 1200);
+      showLine('Welcome to Moon Prison.', 50, 1);
+      showLine('This is your cell.', 50);
+      showLine('A perfect glass room and a sun that never sets.', 50);
+      showLine('Amazing.', 100);
+      nextScreenLoader(scene1Question1, 300);
+  }, 200);
 }
 
-function policeman (clickCounter, clickInterval, extra) {
-    if (clickCounter === 1) {
-        // insert audio hey freeze!
-        intervalCounter = 0;
-        showLine('FREEZE!', 50, 0, 1, 0, 'chaserSpeech');
-        $('.chaserSpeech').css({
-            'position'  :   'fixed',
-            'left'      :   intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
-            'top'       :   '75%',
-            'font-size' :   '52px'
-        }).animate({
-            'opacity'   :   '0',
-            'left'      :   '-=10%'
-        }, 2000);
+function scene1Question1 () {
+    showLine('What will you do?', 50, true);
 
-        policeTimer = setInterval(function() {
-            intervalCounter += 1;
-            starredStep(intervalCounter, clickInterval, extra, '^', 5);
-        }, 250);
-    } else if (clickCounter === 15) {
-        showLine('BANG!', 50, 0, 1, 0, 'chaserSpeech');
-        $('.chaserSpeech').css({
-            'position'  :   'fixed',
-            'left'      :   intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
-            'top'       :   '75%'
-        }).animate({
-            'opacity'   :   '0',
-            'left'      :   '-=10%'
-        }, 2000);
-    }
-    return (intervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
+    answerOptions(['SIT', 'STAND', 'THINK ABOUT WHAT YOU\'VE DONE'], ['WHY', 'WHY', 'OH GOD WHY']);
+
+    // TODO I will clean this up I swear. It just hurts for me to look at for too long of a period
+    $('#ansDiv').on('mousedown.answering', '#ansOp0', function () {
+      console.log('clicked sit');
+    switchOnClick([$('#ansOp1').css('opacity') === '1' || $('#ansOp1').css('opacity') === '0.5',
+                              $('#ansOp1').css('opacity') === '0'],[[0, 1, 1],[0,1,1]], ['You are now sitting. Beautiful.', 'You are now sitting. Beautiful.']);
+                            });
+    $('#ansDiv').on('mousedown.answering', '#ansOp1', function () {
+      console.log('clicked stand');
+    switchOnClick([$('#ansOp0').css('opacity') === '1' && $('#ansOp1').css('opacity') === '1',
+                              $('#ansOp0').css('opacity') === '0',
+                              $('#ansOp1').css('opacity') === '0.5'], [[1, 0, 1],[1, 0, 1],[ 1, 0, 1]], ['You continue to stand. You are thinking nothing.', 'You are now standing. Horrible.', 'You\'ve been standing a while, perhaps you should SIT and THINK ABOUT WHAT YOU\'VE DONE.']);
+                            });
+    $('#ansDiv').on('mousedown.answering', '#ansOp2', function () {
+      console.log('clicked think');
+    switchOnClick([($('#ansOp1').css('opacity') === '1' && $('#ansOp0').css('opacity') === '1') || ($('#ansOp1').css('opacity') === '0.5' && $('#ansOp0').css('opacity') === '1'),
+                              $('#ansOp1').css('opacity') === '1' && $('#ansOp0').css('opacity') === '0',
+                              $('#ansOp1').css('opacity') === '0' && $('#ansOp0').css('opacity') === '1'], [[1, 0.5, 1],[0, 0, 0],[1, 0.5, 1]], ['That would be exhausting.', 'finish', 'That would be exhausting.'], scene1Screen2);
+                            });
 }
 
-function nowRun(bufferList, extra = 10000, clickCounter = 0, policePosition = -1) {
-    showLine('Oh, it was running', 100, 1);
-    var tuna = new Tuna(context);
-    var filter = new tuna.Filter({
-        frequency: 3000, //20 to 22050
-        Q: 1, //0.001 to 100
-        gain: 0, //-40 to 40 (in decibels)
-        filterType: "lowpass", //lowpass, highpass, bandpass, lowshelf, highshelf, peaking, notch, allpass
-        bypass: 0
+function scene1Screen2 () {
+    $('#ansDiv').off('.answering');
+    clearScreen(0, ['.selectable', '.msg'], 200);
+    stopAudio('shiryu8');
+    setTimeout(function () {
+        showLine('What\'s this...?', 50, 1, 0, 2000);
+        showBirdWindow();
+        setTimeout(function () {
+            showBirdImage();
+        }, 500);
+        showLine('What glorious providence.', 50, 0, 0);                        // TODO add click instruction
+        cooingAudioLoad();
+        showLine('[Click] to COO', 100, 0, 0, 500, 'afterMessageInstruct');
+    }, 400);
+}
+
+function showBirdWindow() {
+    var birdWindow = document.createElement('div');
+    $('body').append(birdWindow);
+    $(birdWindow).attr('id', 'birdWindow').attr('class', 'cooElement');
+    $(birdWindow).css({
+        'display'   : 'none',
+        'position'  : 'absolute',
+        'background-color': 'white',
+        'box-shadow': '4px 4px 4px #BF16B6',
+        'right'     : '5%',
+        'top'       : '10%',
+        'width'     : '200px',
+        'height'    : '200px',
+        'opacity'   : '0',
+        'z-index'   : '-10'
     });
-    var source = context.createBufferSource();
-    source.buffer = bufferList[0];
-    var gainControl = context.createGain();
-    var gainFilter = context.createGain();
-
-    source.connect(filter);
-    filter.connect(gainFilter);
-    gainFilter.connect(context.destination);
-    source.connect(gainControl);
-    gainControl.connect(context.destination);
-    gainFilter.gain.value = 0;
-    gainControl.gain.value = 0;
-
-    var audioFadeIn = setInterval(function () {
-      gainFilter.gain.value += 0.05;
-    }, 250);
-    setTimeout(function() {
-      clearInterval(audioFadeIn);
-    }, 5000);
-
-    source.start(0, 12);
-
-    var caughtStatus = false;
-
-  setTimeout(function () {
-    alternateClicks(0, 0, [
-        function () {
-            if (clickCounter === 0) {
-                gainControl.gain.value = 1;
-                filter.disconnect();
-            }
-            clickCounter += 1;
-            starredStep(clickCounter, 100, extra);
-            policePosition = policeman(clickCounter, 100, extra);
-            if ((policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01)))) {
-              console.log('status change to true');
-              caughtStatus = true;
-            }
-        },
-        function () {
-            clickCounter += 1;
-            starredStep(clickCounter, 100, extra);
-
-            if ((policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01)))) {
-              console.log('status change to true');
-              caughtStatus = true;
-            }
-        },
-        function () {},
-        function () {},
-        function () {
-          if (caughtStatus) {
-            var audioSlowdown = setInterval(function () {
-              source.playbackRate.value -= 0.05;
-            }, 250);
-          } else {
-            source.connect(filter);
-            filter.connect(gainFilter);
-            gainFilter.connect(context.destination);
-            gainFilter.gain.value = 1;
-            var audioFadeOut = setInterval(function () {
-              gainFilter.gain.value -= 0.05;
-              console.log(gainFilter.gain.value);
-            }, 250);
-            gainControl.gain.value = 0;
-          }
-
-          setTimeout(function () {
-            clearInterval(audioSlowdown);
-            clearInterval(audioFadeOut);
-            source.stop();
-            caught(caughtStatus);
-          }, 5000);
-        }], function () {
-            return Boolean(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) || (clickCounter > 115);
-        });
-  }, 1100);
+    setTimeout(function () {
+        $(birdWindow).fadeTo(900, 1);
+    }, 100);
 }
 
-function nowRunAudio () {
-    bufferLoader = new BufferLoader(
+function showBirdImage() {
+    var birdWindow = document.getElementById('birdWindow');
+    var birdImage = document.createElement('img');
+    $('body').append(birdImage);
+    $(birdImage).attr('id', 'birdImage').attr('class', 'cooElement');
+    $(birdImage).attr('src', './graphics/birdImage2.png');
+    $(birdImage).css({
+        'display'   : 'none',
+        'position'  : 'absolute',
+        'right'     : '5%',
+        'top'       : '13%',
+        'width'     : 'auto',
+        'height'    : '150px',
+        'opacity'   : '0',
+        'filter'    : 'brightness(0)',
+        'z-index'   : '10'
+    });
+
+    setTimeout(function () {
+        $(birdImage).fadeTo(900, 1);
+    }, 100);
+}
+
+function cooingAudioLoad() {
+    var cooingEffects = [];
+
+    for (var i = 1; i < 13; i++) {
+        cooingEffects.push('../audio/coo/coo' + i + '.mp3');
+    }
+
+    var bufferLoader = new BufferLoader(
         context,
-        [
-            '../audio/MoDemJams.webm'
-        ],
-        nowRun
+        cooingEffects,
+        cooingAudioPrepare
     );
 
     bufferLoader.load();
 }
 
-function starredStep (clickCounter, clickInterval, extra = 0, text = '*', offset = 1) {
-    var stepStar = document.createElement('div');
-    $(stepStar).css({
-      'display'  : 'block',
-      'position' : 'absolute',
-      'left'     : clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - (offset * $(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
-      'bottom'   : '2%',
-      'font-size': ($(window).width() / (1700 - clickInterval)) * 20 + 'px'
-  }).appendTo('body').html(text).attr('class', 'anyText').attr('id', 'starStep' + clickCounter).animate({
-      'opacity': '0',
-      'bottom': '7%',
-      'font-size': '+=20px'
-  }, 1000, 'linear');
-    setTimeout(function () {
-      $('#starStep' + clickCounter).remove();
-    }, 1100);
-}
+function cooingAudioPrepare(bufferList) {
+    var cooingAudio = {};
+    var tuna = new Tuna(context);
 
-function switchGains(gainNodeArray, toggleArray) {
-    for (var i = 0; i < gainNodeArray.length; i++) {
-        gainNodeArray[i].gain.value = toggleArray[i];
+    var filter = new tuna.Phaser({
+    rate: 1.2,                     //0.01 to 8 is a decent range, but higher values are possible
+    depth: 0.3,                    //0 to 1
+    feedback: 0.2,                 //0 to 1+
+    stereoPhase: 30,               //0 to 180
+    baseModulationFrequency: 700,  //500 to 1500
+    bypass: 0
+});
+
+    cooingAudio['bufferList'] = bufferList;
+
+    cooingAudio['gainControl'] = context.createGain();
+    cooingAudio['gainFilter'] = context.createGain();
+    cooingAudio['filter'] = filter;
+
+    for (var i = 0; i < bufferList.length; i++) {
+        cooingAudio['coo' + i] = context.createBufferSource();
+        cooingAudio['coo' + i].buffer = bufferList[i];
+
+        cooingAudio['coo' + i].connect(cooingAudio['gainControl']);
+        cooingAudio['coo' + i].connect(cooingAudio['filter']);
     }
+
+    cooingAudio['filter'].connect(cooingAudio['gainFilter']);
+    cooingAudio['gainFilter'].connect(context.destination);
+    cooingAudio['gainControl'].connect(context.destination);
+    cooingAudio['gainFilter'].gain.value = 0;
+    cooingAudio['gainControl'].gain.value = 0;
+
+    newTargetPos(cooingAudio, 0);
 }
 
-function animateClickIndicator (click, animElements, clickInterval, audioInterval) {
-    console.log('animating indicators');
-    if (click === 'left') {
-        for (var i = 0; i < (animElements[0].length + 3) / 4; i++) {
-          $('#animElem0span' + ((animElements[0].length + 3) / 4 + i - 1)).fadeTo(i * (clickInterval / 6) + audioInterval - clickInterval, 1);
-          $('#animElem0span' + ((animElements[0].length + 3) / 4 - i - 1)).fadeTo(i * 0.5 * (clickInterval / 6), 0);
-        }
-        $('#instructorLeft').fadeTo(clickInterval / 6, 0);
-        setTimeout(function () {
-          $('#instructorRight').fadeTo(clickInterval / 2, 1);
-      }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
-  } else if (click === 'right') {
-      for (var j = 0; j < animElements[0].length / 2; j++) {
-        $('#animElem0span' + ((animElements[0].length + 3) / 4 - j - 1)).fadeTo(j * (clickInterval / 6) + audioInterval - clickInterval, 1);
-        $('#animElem0span' + ((animElements[0].length + 3) / 4 + j - 1)).fadeTo(j * 0.5 * (clickInterval / 6), 0);
-      }
-      $('#instructorRight').fadeTo(clickInterval / 6, 0);
-      setTimeout(function () {
-        $('#instructorLeft').fadeTo(clickInterval / 2, 1);
-    }, clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2));
-  }
+function newTargetPos(cooingAudio, cooLoopCounter) {
+    var actualPos = [];
+    console.log(cooLoopCounter);
+    var targetPos = genRandomTargetPos();
+    cooing(cooingAudio, targetPos, actualPos, cooLoopCounter)
 }
 
-function audioTimeout (audio, offset, startedAt) {
-    elapsed = (context.currentTime - startedAt).toFixed(1);                                                 // TODO maybe implement the pausing and starting as its own functions?
-    audio['source'].stop();
-    console.log('stopped: ' + offset);
-    return elapsed;
+function cooing(cooingAudio, targetPos, actualPos, cooLoopCounter) {
+    $(document).off("mousemove");                                               // clears mousemove listener for any repeats
+    console.log(cooLoopCounter);
+    $(document).one("click", function(event) {
+        mouseMoveIndicator(targetPos, event);
+        actualPos = checkClickPosition();
+        console.log(cooLoopCounter);
+        playResultingCoo(actualPos, targetPos, cooingAudio, cooLoopCounter);
+    });
+
 }
 
+function genRandomTargetPos() {
+    var randomClickPos = $('<div/>').attr('id', 'targetPos');
+    var viewportWidth = $(window).width();
+    var viewportHeight = $(window).height();
+
+    var posX = (Math.random() * $(window).width()).toFixed();
+    var posY = (Math.random() * $(window).height() * 0.7).toFixed();
+
+    posX = minMaxLimiter(posX, 150, $(window).height() - 150);
+    posY = minMaxLimiter(posY, 150, $(window).height() - 150);
+
+    randomClickPos.css({
+        'position'    : 'absolute',
+        'left'        : posX + 'px',
+        'bottom'      : posY + 'px'
+    }).appendTo('body');
+
+    return [posX, posY];
+}
+
+function minMaxLimiter(number, lower, upper) {
+    number = (number < lower ? lower : number);
+    number = (number > upper ? upper : number);
+    return number;
+}
+
+function mouseMoveIndicator(targetPos, event) {
+    var posX, posY, mousePos = [];
+
+    posX = event.pageX;
+    posY = event.pageY;
+    mousePos = [posX, posY];
+
+    createStarIndicator(mousePos);
+    animateMouseMoveIndicator(targetPos);
+}
+
+function createStarIndicator(mousePos) {
+    var starIndicator = document.createElement('div');
+    $(starIndicator).attr('id', 'starIndicator').css({
+        'font-family' : 'Gaiatype',
+        'color'       : 'white',
+        'text-shadow' : '3px 3px 0px #BF4494',
+        'position'    : 'absolute',
+        'left'        : mousePos[0] + 'px',
+        'bottom'      : ($(window).height() - mousePos[1]) + 'px',
+        'z-index'     : '20'
+    }).html('*').appendTo('body');
+}
+
+<<<<<<< HEAD
 function fallingStars (totalClicks, eotb) {
     for (var i = 0; i < totalClicks; i++) {
         clearInterval(intId[i]);
@@ -215,10 +239,538 @@ function fallingStars (totalClicks, eotb) {
         }
         clearScreen(0, ['starField', 'msg'], 1900);
         eotb['source'].stop();                                                  // TODO add effect instead of random stop
+=======
+function animateMouseMoveIndicator(targetPos) {
+    $('#starIndicator').animate({
+        'left' : (targetPos[0]) + 'px',
+        'bottom': (targetPos[1]) + 'px',
+        'opacity': '0'
+>>>>>>> df18c7b20b13f58a0bb0922ddc346c82a56230cf
+    }, 1000);
+    setTimeout(function () {
+        $('#starIndicator').remove();
+    }, 700);
+}
+
+function checkClickPosition() {
+    var posX, posY;
+
+    posX = event.pageX;
+    posY = $(window).height() - event.pageY;
+
+    return [posX, posY];
+}
+
+function playResultingCoo(actualPos, targetPos, cooingAudio, cooLoopCounter) {
+
+    var xDiff = (targetPos[0] - actualPos[0]) / (targetPos[0] > actualPos[0] ? targetPos[0] : actualPos[0]);
+    var yDiff = (targetPos[1] - actualPos[1]) / (targetPos[1] > actualPos[1] ? targetPos[1] : actualPos[1]);
+    console.log(actualPos + '    ' + targetPos);
+    console.log('xDiff: ' + xDiff + ' yDiff: ' + yDiff);
+
+    if (Math.abs(xDiff) < 0.05) {                    //checking click position against target position
+        console.log('x-axis satisfied');
+        if (Math.abs(yDiff) < 0.05) {
+            console.log('y-axis satisfied, playing sound...');
+            console.log(cooLoopCounter);
+            playPureCoo(cooingAudio, cooLoopCounter);
+            correctClickAnimation(actualPos);                                   // TODO add bird flutter sound
+        } else {
+            playDistortedCoo(xDiff, yDiff, cooingAudio, targetPos, actualPos, cooLoopCounter);
+        }
+    } else {
+        playDistortedCoo(xDiff, yDiff, cooingAudio, targetPos, actualPos, cooLoopCounter);
+    }
+}
+
+function playPureCoo(cooingAudio, cooLoopCounter) {
+    var i = Math.floor(Math.random() * cooingAudio['bufferList'].length);
+    cooingAudio['gainControl'].gain.value = 1;
+    cooingAudio['coo' + i].start(0);
+
+    // recreating buffer source
+    setTimeout(function () {
+        cooingAudio['gainControl'].gain.value = 0;
+
+        cooingAudio['coo' + i] = context.createBufferSource();
+        cooingAudio['coo' + i].buffer = cooingAudio['bufferList'][i];
+
+        cooingAudio['coo' + i].connect(cooingAudio['gainControl']);
+        cooingAudio['coo' + i].connect(cooingAudio['filter']);
+
+        $('#targetPos').remove();
+
+        cooLoopCounter += 1;
+        var continueCheck = lightenBird(cooLoopCounter);
+
+        if (continueCheck) {
+            clearScreen(500, ['.msg'], 0);
+            addAudio('EOTBDrone', './audio/EOTBDrone.ogg', 0, true);
+            playAudio('EOTBDrone');
+
+            munchingAudioLoad();
+        } else {
+            newTargetPos(cooingAudio, cooLoopCounter);
+        }
     }, 1000);
 }
 
-function slowWalk(clickInterval, audioInterval, eotb, animElements, totalClicks = 0, playing = false, condition = 0, clickCounter = 0, offset = 22) {
+function correctClickAnimation(actualPos) {
+    var successStar = document.createElement('div');
+    $('body').append(successStar)
+    $(successStar).attr('class', 'anyText').css({
+        'position'  :   'absolute',
+        'left'      :   actualPos[0],
+        'bottom'    :   actualPos[1],
+        'font-size' :   '10px',
+        'opacity'   :   '0'
+    }).html('*').animate({
+        'font-size' :   '+=40px',
+        'opacity'   :   '1'
+    }, 1000, 'linear');
+    setTimeout(function () {
+        $(successStar).remove();
+    }, 1100);
+}
+
+function playDistortedCoo(xDiff, yDiff, cooingAudio, targetPos, actualPos, cooLoopCounter) {
+    var i = Math.floor(Math.random() * cooingAudio['bufferList'].length);
+
+    // Altering audio distortion based on distance from target
+    cooingAudio['coo' + i].playbackRate.value = (1 - Math.abs(xDiff) < 0.6 ? 0.6 : 1 - Math.abs(xDiff));            // TODO can go too slow to hear, give min value
+    cooingAudio['gainFilter'].gain.value = Math.abs(yDiff) * 2;
+    cooingAudio['gainControl'].gain.value = 1 - Math.abs(yDiff) * 2;
+
+    $('.afterMessageInstruct').fadeTo(250, 0.5);
+
+    cooingAudio['coo' + i].start(0);
+
+    setTimeout(function () {                                                    // TODO add on/off changes for click instruction based on this timeout
+        $('.afterMessageInstruct').fadeTo(850, 1);
+
+        cooingAudio['coo' + i] = context.createBufferSource();
+        cooingAudio['coo' + i].buffer = cooingAudio['bufferList'][i];
+
+        cooingAudio['coo' + i].connect(cooingAudio['gainControl']);
+        cooingAudio['coo' + i].connect(cooingAudio['filter']);
+
+        // resetting values
+        cooingAudio['coo' + i].playbackRate.value = 1;
+        cooingAudio['gainFilter'].gain.value = 0;
+        cooingAudio['gainControl'].gain.value = 0;
+
+        cooing(cooingAudio, targetPos, actualPos, cooLoopCounter);                                                        // TODO have it repeat without regenning random position for this
+    }, 1000);
+}
+
+function lightenBird(cooLoopCounter) {
+    $({brightnessValue: (cooLoopCounter - 1) * 0.1}).animate({brightnessValue: (cooLoopCounter) * 0.1}, {
+        duration: 1000,
+        easing: 'swing', // or "linear"
+                         // use jQuery UI or Easing plugin for more options
+        step: function() {
+            console.log(this.brightnessValue);
+            $('#birdImage').css({
+                "-webkit-filter": "brightness("+this.brightnessValue+")",
+                "filter": "brightness("+this.brightnessValue+")"
+            });
+        }
+    });
+
+    $('#birdImage').animate({
+        'height'    :   '+=50px'                                                // Or fade out fade in at larger size?
+    });
+
+    if (cooLoopCounter === 10) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+/* function scene1Screen2 () {
+  $('#ansDiv').off('.answering');
+  clearScreen(0, ['.selectable', '.msg'], 200);
+  stopAudio('shiryu8');
+  setTimeout(function () {
+    showLine('You think.', 50, 1);
+    showLine('You think hard.', 50, 0, 0, 750);
+    showLine('Nothing is coming.', 50);
+    showLine('Thinking of nothing.', 50);
+    showLine('Nothing but... munching...', 100);
+    showLine('Press [SPACEBAR] to munch', 50, 0, 0, 100, 'afterMessageInstruct');
+    munchingAudioLoad();
+    }, 400);
+} */
+
+function munchingAudioLoad () {
+    var munchingEffects = [];
+    for (var i = 0; i < 7; i++) {
+      munchingEffects.push('../audio/munching/munch' + i + '.mp3');
+    }
+    for (var j = 0; j < 5; j++) {
+      munchingEffects.push('../audio/munching/crunch' + j + '.mp3');
+    }
+    for (var k = 0; k < 5; k++) {
+        munchingEffects.push('../audio/munching/grunt' + k + '.mp3');
+    }
+    munchingEffects.push('../audio/munching/starvation.mp3');
+    munchingEffects.push('../audio/munching/chorus.mp3');
+
+    for (var l = 13; l < 22; l++) {
+        munchingEffects.push('../audio/coo/coo' + l + '.mp3');
+    }
+
+    var bufferLoader = new BufferLoader(
+        context,
+        munchingEffects,
+        munchingAudioPrepare
+    );
+
+    bufferLoader.load();
+}
+
+function munchingAudioPrepare (bufferList) {
+    showLine('NOW! ATTACK IT NOW!!', 100, 1, 0, 0, '', 1, 1);
+    showLine('PRESS [SPACEBAR] TO MUNCH', 50, 0, 0, 0, 'afterMessageInstruct', 1, 1);
+
+    var tuna = new Tuna(context);
+    munchingAudio = {};
+    for (var i = 0; i < 7; i++) {
+        munchingAudio['munchSource' + i] = context.createBufferSource();
+        munchingAudio['munchSource' + i].buffer = bufferList[i];
+    }
+
+    for (var j = 0; j < 5; j++) {
+        munchingAudio['crunchSource' + j] = context.createBufferSource();
+        munchingAudio['crunchSource' + j].buffer = bufferList[j + 7];
+        munchingAudio['gruntSource' + j] = context.createBufferSource();
+        munchingAudio['gruntSource' + j].buffer = bufferList[j + 12];
+    }
+
+    for (var l = 0; l < 9; l++) {
+        munchingAudio['coo' + l] = context.createBufferSource();
+        munchingAudio['coo' + l].buffer = bufferList[l + 19];
+    }
+
+    munchingAudio['starveSource'] = context.createBufferSource();
+    munchingAudio['starveSource'].buffer = bufferList[17];
+
+    munchingAudio['chantSource'] = context.createBufferSource();
+    munchingAudio['chantSource'].buffer = bufferList[18];
+    munchingAudio['gainChantControl'] = context.createGain();
+
+    munchingAudio['gainMunchConvolver'] = context.createGain();
+    munchingAudio['gainMunchControl'] = context.createGain();
+    munchingAudio['gainCrunchControl'] = context.createGain();
+    munchingAudio['gainGruntControl'] = context.createGain();
+    munchingAudio['gainGruntOverdrive'] = context.createGain();
+
+    munchingAudio['gainCooControl'] = context.createGain();
+
+    var overdrive = new tuna.Overdrive({
+    outputGain: 0.1,         //0 to 1+
+    drive: 0.5,              //0 to 1
+    curveAmount: 0.95,          //0 to 1
+    algorithmIndex: 0,       //0 to 5, selects one of our drive algorithms
+    bypass: 1
+    });
+
+    var convolver = new tuna.Convolver({
+    highCut: 7500,                         //20 to 22050
+    lowCut: 20,                             //20 to 22050
+    dryLevel: 1,                            //0 to 1+
+    wetLevel: 3,                            //0 to 1+
+    level: 0.5,                               //0 to 1+, adjusts total output of both wet and dry
+    impulse: "./audio/impulses/PrimeShort.wav",    //the path to your impulse response
+    bypass: 0
+    });
+
+    munchingAudio['convolver'] = convolver;
+    munchingAudio['overdrive'] = overdrive;
+
+    munchingAudio['bufferList'] = bufferList;
+    starveOnRelease(munchingAudio);
+}
+
+function starveOnRelease (munchingAudio, munchCounter = 0, munchTotal = 0) {
+  var starveInterval,
+      starveCounter,
+      intervalStarted = false;
+
+      var starveTimer = setTimeout(function () {
+        munchCounter = 0;
+      }, 250);
+
+      if (munchTotal > 8) {
+        if (munchTotal > 15) {
+          if (munchTotal > 21) {
+            if (munchTotal > 32) {
+                starveCounter = 32.3;
+            } else {
+              starveCounter = 21.1;
+            }
+          } else {
+            starveCounter = 15.5;
+          }
+        } else {
+          starveCounter = 8.4;
+        }
+      } else {
+        starveCounter = 0;
+      }
+
+      var audioTimer = setTimeout(function () {
+          munchingAudio['starveSource'].connect(context.destination);
+          munchingAudio['starveSource'].start(0, starveCounter.toFixed(1));
+          intervalStarted = true;
+
+          starveInterval = setInterval(function () {
+            starveCounter += 1;
+            if (starveCounter > 38) {
+              clearTimeout(starveTimer);
+              clearTimeout(audioTimer);
+              clearInterval(starveInterval);
+              munchingAudio['starveSource'].stop();
+              $(document).off('keydown');
+              munchingResult(0);
+            }
+        }, 1000);
+    }, 500);
+
+
+    $(document).one('keydown', function (e) {
+      clearInterval(starveInterval);
+      if (intervalStarted) {
+            munchingAudio['starveSource'].stop();
+            munchingAudio['starveSource'] = context.createBufferSource();
+            munchingAudio['starveSource'].buffer = munchingAudio['bufferList'][17];
+      }
+      clearTimeout(starveTimer);
+      clearTimeout(audioTimer);
+      munchOnPress (e, munchingAudio, munchCounter, munchTotal);
+    });
+}
+
+function munchOnPress (e, munchingAudio, munchCounter, munchTotal) {
+    if (e.which === 32) {
+      var stop = 0;
+
+      munchCounter += 1;
+      if (munchCounter > 3) {
+          munchCounter = 1;
+      }
+      if (munchTotal === 0) {
+          var munchBlink = setInterval(function () {
+              $('.afterMessageInstruct').fadeTo(250, 0.5).delay(100).fadeTo(250, 1);
+          }, 600);
+      }
+
+      munchTotal += 1;
+
+      k = Math.floor(Math.random() * 7);
+      j = Math.floor(Math.random() * 5);
+      l = Math.floor(Math.random() * 9);
+
+      if (munchCounter === 1) {
+          playMunchSound(munchingAudio, munchTotal, k);
+          playPainedCoo(munchingAudio, munchTotal, l);
+          $('#birdWindow').animate({
+              'height' : $(window).height() * (munchTotal / 50) * 0.7 + 200 + 'px',
+              'width'  : $(window).width() * (munchTotal / 50) * 0.8 + 200 + 'px'
+          }, 250, 'linear');
+      }
+      if (munchCounter === 2) {
+          playCrunchSound(munchingAudio, munchTotal, j);
+      }
+      if (munchCounter === 3 && munchTotal < 45) {
+        if (Math.random() < munchTotal / 50) {
+            playGruntSound(munchingAudio, munchTotal, j);
+        }
+        munchCounter = 0;
+      }
+
+      if (munchTotal > 39) {
+          if (munchTotal === 40) {
+              munchingAudio['chantSource'].connect(munchingAudio['gainChantControl']);
+              munchingAudio['gainChantControl'].connect(context.destination);
+              // munchingAudio['chantSource'].start(0);
+              $('#EOTBDrone').get(0).volume = 0;
+              var audioFadeIn = setInterval(function () {
+                  $('#EOTBDrone').get(0).volume += 0.1;
+              }, 500);
+              setTimeout(function () {
+                  clearInterval(audioFadeIn);
+              }, 5000);
+          }
+          munchingAudio['gainChantControl'].gain.value = munchTotal / 50;
+      }
+      if (munchTotal > 50) {
+        playGruntSound(munchingAudio, munchTotal, j);
+        clearInterval(munchBlink);
+        setTimeout(function () {
+            munchingResult(1);
+        }, 500);
+        stop = 1;
+      }
+      if (!stop) {
+        $(document).one('keyup', function (e) {
+            if (munchCounter === 0) {
+                setTimeout(function() {
+                    starveOnRelease(munchingAudio, munchCounter, munchTotal);
+                }, 500 * (1 - (munchTotal / 50)));
+            } else {
+                starveOnRelease(munchingAudio, munchCounter, munchTotal);
+            }
+      });
+      }
+  } else {
+      $(document).one('keyup', function (e) {
+          if (munchCounter === 0) {
+              setTimeout(function() {
+                  starveOnRelease(munchingAudio, munchCounter, munchTotal);
+              }, 500 * (1 - (munchTotal / 50)));
+          } else {
+              starveOnRelease(munchingAudio, munchCounter, munchTotal);
+          }
+  });
+  }
+}
+
+function playMunchSound (munchingAudio, munchTotal, k) {
+    munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
+    munchingAudio['gainMunchControl'].connect(context.destination);
+    munchingAudio['munchSource' + k].connect(munchingAudio['convolver']);
+    munchingAudio['convolver'].connect(munchingAudio['gainMunchConvolver']);
+    munchingAudio['gainMunchConvolver'].connect(context.destination);
+    munchingAudio['gainMunchConvolver'].gain.value = 0.5 - munchTotal / 50;
+    munchingAudio['gainMunchControl'].gain.value = 0.5 + munchTotal / 50;
+    munchingAudio['munchSource' + k].start(0);
+    munchingAudio['munchSource' + k] = context.createBufferSource();
+    munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k];
+}
+
+function playPainedCoo (munchingAudio, munchTotal, l) {
+    munchingAudio['coo' + l].connect(munchingAudio['gainCooControl']);
+    munchingAudio['gainCooControl'].connect(context.destination);
+    munchingAudio['coo' + l].connect(munchingAudio['convolver']);
+    munchingAudio['convolver'].connect(munchingAudio['gainMunchConvolver']);
+    munchingAudio['gainMunchConvolver'].connect(context.destination);
+    munchingAudio['gainMunchConvolver'].gain.value = 0.5 - munchTotal / 50;
+    munchingAudio['gainCooControl'].gain.value = 1 - munchTotal / 50;
+    munchingAudio['coo' + l].start(0.200);
+    munchingAudio['coo' + l] = context.createBufferSource();
+    munchingAudio['coo' + l].buffer = munchingAudio['bufferList'][k];
+}
+
+function playCrunchSound (munchingAudio, munchTotal, j) {
+    munchingAudio['crunchSource' + j].connect(munchingAudio['gainCrunchControl']);
+    munchingAudio['gainCrunchControl'].gain.value = 0.5 + munchTotal / 20;
+    munchingAudio['gainCrunchControl'].connect(context.destination);
+    munchingAudio['crunchSource' + j].start(0.250);
+    munchingAudio['crunchSource' + j] = context.createBufferSource();
+    munchingAudio['crunchSource' + j].buffer = munchingAudio['bufferList'][7 + j];
+}
+
+function playGruntSound (munchingAudio, munchTotal, j) {
+    munchingAudio['gruntSource' + j].connect(munchingAudio['gainGruntControl']);
+    munchingAudio['gainGruntControl'].connect(context.destination);
+    munchingAudio['gruntSource' + j].connect(munchingAudio['overdrive']);
+    munchingAudio['overdrive'].connect(munchingAudio['gainGruntOverdrive']);
+    munchingAudio['gainGruntOverdrive'].connect(context.destination);
+    munchingAudio['gainGruntControl'].gain.value = munchTotal / 50;
+    munchingAudio['gainGruntOverdrive'].gain.value = (munchTotal > 25 ? munchTotal / 75 : 0);
+    munchingAudio['gruntSource' + j].start(0.5);
+    munchingAudio['gruntSource' + j] = context.createBufferSource();
+    munchingAudio['gruntSource' + j].buffer = munchingAudio['bufferList'][12 + j];
+}
+
+function munchingResult (result) {
+    clearScreen(300, ['.msg', '#birdImage'], 300);
+  if (result) {
+    showLine('', 0, 1);                                                         // added just to clear totalDelay, surely a better way is possible?
+    $('#birdWindow').animate({
+        'top'    : '0%',
+        'right'  : '0%',
+        'height' : $(window).height() + 'px',
+        'width'  : $(window).width() + 'px'
+    }, 1000)
+    clearScreen(1000, ['#birdWindow'], 1000);
+    nextScreenLoader(scene1Screen3, 2000);
+  } else {
+    setTimeout(function () {
+        $('#birdWindow').animate({
+            'height' : '0px',
+            'width'  : '0px'
+        }, 1000)
+        clearScreen(500, ['#birdWindow'], 1000);
+      showLine('You have DIED of STARVATION', 100, 1, 0, 1000, 'starveDeath');
+      setTimeout(function () {
+          loadScene('/scenes/scene2.js');
+      }, 2000);
+    }, 1300);
+  }
+}
+
+function scene1Screen3 () {
+  showLine('That\'s right...', 50, 1);
+  showLine('It wasn\'t just munching...', 50);
+  showLine('There was also something else...', 50);
+
+  walkingAudioLoad();
+}
+
+function walkingAudioLoad () {
+    bufferLoader = new BufferLoader(
+        context,
+        [
+            '../audio/EOTB.ogg'
+        ],
+        walkingAudioPrepare
+    );
+
+    bufferLoader.load();
+}
+
+function walkingAudioPrepare (bufferList) {
+
+    var tuna = new Tuna(context);
+    var source = context.createBufferSource();
+    var gainControl = context.createGain();
+    var gainConvolver = context.createGain();
+
+    var convolver = new tuna.Convolver({
+    highCut: 10000,                         // 20 to 22050
+    lowCut: 20,                             // 20 to 22050
+    dryLevel: 1,                            // 0 to 1+
+    wetLevel: 1,                            // 0 to 1+
+    level: 1,                               // 0 to 1+, adjusts total output of both wet and dry
+    impulse: './audio/impulses/PrimeLong.wav',    // the path to your impulse response
+    bypass: 0
+    });
+
+    var eotb = {};
+    eotb['source'] = source;
+    eotb['convolver'] = convolver;
+    eotb['gainControl'] = gainControl;
+    eotb['gainConvolver'] = gainConvolver;
+    eotb['bufferList'] = bufferList;
+
+    source.buffer = bufferList[0];
+
+    source.connect(gainControl);
+    source.connect(convolver);
+    convolver.connect(gainConvolver);
+    gainConvolver.connect(context.destination);
+    gainControl.connect(context.destination);
+
+      setTimeout(function () {
+          var animElements = createClickIndicators();
+          walking(900, 1400, eotb, animElements);
+      }, 2500);
+}
+
+function walking(clickInterval, audioInterval, eotb, animElements, totalClicks = 0, playing = false, condition = 0, clickCounter = 0, offset = 22) {
     var exactInt = clickInterval / 2 + ((audioInterval + 100 - clickInterval) / 2);
     alternateClicks(clickInterval, audioInterval, [
                                 function () {
@@ -281,12 +833,12 @@ function slowWalk(clickInterval, audioInterval, eotb, animElements, totalClicks 
                                           $('.animElements').fadeTo(500, 1);
                                           $('#instructorLeft').fadeTo(500, 1);
                                           totalClicks = clickCounter;
-                                          slowWalk(300, 700, eotb, animElements, totalClicks, true);
+                                          walking(300, 700, eotb, animElements, totalClicks, true);
                                       } else {
                                           $('#instructorLeft').fadeTo(500, 0);
                                           totalClicks += clickCounter;
                                           fallingStars(totalClicks, eotb);
-                                          nowRunAudio();
+                                          runningAudioLoad();
                                       }
                                     }, 1200);
                                 }], function () {
@@ -294,410 +846,420 @@ function slowWalk(clickInterval, audioInterval, eotb, animElements, totalClicks 
                                 });
 }
 
-function createClickIndicators() {
-    var instructorLeft = document.createElement('span');
-    $('#txtDiv').append(instructorLeft);
-    $(instructorLeft).attr('class', 'anyText').html('[left click]').attr('id', 'instructorLeft').fadeIn(2000);
-
-
-    var animElements = ['* - - - - - _ - - - - - *'],
-        animElemSpans = [];
-    for (var i = 0; i < animElements.length; i++) {
-      animElemSpans[i] = document.createElement('span');
-      $(animElemSpans[i]).attr('id', 'animElem' + i);
-      $(animElemSpans[i]).attr('class', 'animElements');
-      $('#txtDiv').append(animElemSpans[i]);
-      showTextByWord('animElem', '#txtDiv', animElements[i], 0, 0, i);
-
-    }
-
-    var instructorRight = document.createElement('span');
-    $('#txtDiv').append(instructorRight);
-    $(instructorRight).attr('class', 'anyText').html('[right click]').attr('id', 'instructorRight');
-    $(instructorRight).css('opacity', '0');
-
-
-    for (var j = 0; j < (animElements[0].length + 1) / 2; j++) {
-      if (j === ((animElements[0].length + 3) / 4 - 1)) {
-        $('#animElem' + '0' + 'span' + j).fadeIn(2000);// .css('opacity', '1');
-      } else {
-        $('#animElem' + '0' + 'span' + j).css('opacity', '0');
-      }
-    }
-    return animElements;
-}
-
-function scene1Audio (bufferList) {
-
-    var tuna = new Tuna(context);
-    var source = context.createBufferSource();
-    var gainControl = context.createGain();
-    var gainConvolver = context.createGain();
-
-    var convolver = new tuna.Convolver({
-    highCut: 10000,                         // 20 to 22050
-    lowCut: 20,                             // 20 to 22050
-    dryLevel: 1,                            // 0 to 1+
-    wetLevel: 1,                            // 0 to 1+
-    level: 1,                               // 0 to 1+, adjusts total output of both wet and dry
-    impulse: './audio/impulses/PrimeLong.wav',    // the path to your impulse response
-    bypass: 0
-    });
-
-    var eotb = {};
-    eotb['source'] = source;
-    eotb['convolver'] = convolver;
-    eotb['gainControl'] = gainControl;
-    eotb['gainConvolver'] = gainConvolver;
-    eotb['bufferList'] = bufferList;
-
-    source.buffer = bufferList[0];
-
-    source.connect(gainControl);
-    source.connect(convolver);
-    convolver.connect(gainConvolver);
-    gainConvolver.connect(context.destination);
-    gainControl.connect(context.destination);
-
-      setTimeout(function () {
-          var animElements = createClickIndicators();
-          slowWalk(900, 1400, eotb, animElements);
-      }, 2500);
-}
-
-function startWalking () {
-  showLine('That\'s right...', 50, 1);
-  showLine('It wasn\'t just munching...', 50);
-  showLine('There was also something else...', 50);
-
-  // Audio dealings
-  bufferLoader = new BufferLoader(
-      context,
-      [
-          '../audio/EOTB.ogg'
-      ],
-      scene1Audio
-  );
-
-  bufferLoader.load();
-}
-
-function munchResult (result) {
-  if (result) {
-    clearScreen(300, ['.msg'], 300);
-    showLine('', 0, 1);                                                         // added just to clear totalDelay, surely a better way is possible?
-    nextScreenLoader(startWalking, 1500);
-  } else {
-    clearScreen(300, ['.msg'], 600);
+function starredStep (clickCounter, clickInterval, extra = 0, text = '*', offset = 1) {
+    var stepStar = document.createElement('div');
+    $(stepStar).css({
+      'display'  : 'block',
+      'position' : 'absolute',
+      'left'     : (clickCounter - offset) * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+      'bottom'   : '2%',
+      'font-size': ($(window).width() / (1700 - clickInterval)) * 20 + 'px'
+  }).appendTo('body').html(text).attr('class', 'anyText').attr('id', 'starStep' + clickCounter).animate({
+      'opacity': '0',
+      'bottom': '7%',
+      'font-size': '+=20px'
+  }, 1000, 'linear');
     setTimeout(function () {
-      showLine('You have DIED of STARVATION', 100, 1, 0, 1000, 'starveDeath');
-    }, 1300);
-  }
+      $('#starStep' + clickCounter).remove();
+    }, 1100);
 }
 
-function starveRelease (munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveCounter = 0, starveInterval = 0) {
-  var starveInterval,
-      intervalStarted = false;
+function switchGains(gainNodeArray, toggleArray) {
+    for (var i = 0; i < gainNodeArray.length; i++) {
+        gainNodeArray[i].gain.value = toggleArray[i];
+    }
+}
 
-      starveTimer = setTimeout(function () {
-        munchCounter = 0;
-      }, 250);
+function audioTimeout (audio, offset, startedAt) {
+    elapsed = (context.currentTime - startedAt).toFixed(1);                                                 // TODO maybe implement the pausing and starting as its own functions?
+    audio['source'].stop();
+    console.log('stopped: ' + offset);
+    return elapsed;
+}
 
-      console.log(starveCounter);
-
-      if (munchTotal > 8) {
-        if (munchTotal > 15) {
-          if (munchTotal > 21) {
-            if (munchTotal > 32) {
-                starveCounter = 32.3;
-            } else {
-              starveCounter = 21.1;
-            }
-          } else {
-            starveCounter = 15.5;
-          }
-        } else {
-          starveCounter = 8.4;
+function fallingStars (totalClicks, eotb) {
+    for (var i = 0; i < totalClicks; i++) {
+        clearInterval(intId[i]);
+    }
+    setTimeout(function () {
+        for (var i = 0; i < totalClicks; i++) {
+            $('#star' + i).animate({
+                'top' : '100%',
+                'opacity' : '0'
+            }, 2000 * Math.random());
         }
-      } else {
-        starveCounter = 0;
-      }
 
-      var audioTimer = setTimeout(function () {
-          munchingAudio['starveSource'].connect(context.destination);
-          munchingAudio['starveSource'].start(0, starveCounter.toFixed(1));
-          intervalStarted = true;
+        clearScreen(0, ['.starField', '.msg'], 1900);
 
-          starveInterval = setInterval(function () {
-            starveCounter += 1;
-            if (starveCounter > 38) {
-              clearTimeout(starveTimer);
-              clearTimeout(audioTimer);
-              clearInterval(starveInterval);
-              munchingAudio['starveSource'].stop();
-              munchResult(0);
+        var eotbFadeOut = setInterval(function () {
+            eotb['gainControl'].gain.value -= 0.05;
+            if (eotb['gainControl'].gain.value < 0.1) {
+                eotb['source'].stop(0);
+                clearInterval(eotbFadeOut);
             }
-        }, 1000);
-    }, 500);
-
-
-    $(document).one('keydown', function (e) {
-      clearInterval(starveInterval);
-      if (intervalStarted) {
-            munchingAudio['starveSource'].stop();
-            munchingAudio['starveSource'] = context.createBufferSource();
-            munchingAudio['starveSource'].buffer = munchingAudio['bufferList'][17];
-      }
-      clearTimeout(starveTimer);
-      clearTimeout(audioTimer);
-      munchPress (e, munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
-    });
+        }, 500);
+    }, 1000);
 }
 
-function munchPress (e, munchingAudio, audioTimer = 0, munchCounter = 0, munchTotal = 0, starveTimer = 0, starveCounter = 0, starveInterval = 0) {
-    if (e.which === 32) {
-      var stop = 0;
-      clearTimeout(audioTimer);
+function runningAudioLoad () {
+    var runningAudioPrepareArray = [];
 
-      munchCounter += 1;
+    runningAudioPrepareArray.push('../audio/MoDemJams.mp3');
 
-      if (munchCounter > 3) {
-          munchCounter = 1;
-      }
-
-      if (munchTotal === 0) {
-          var munchBlink = setInterval(function () {
-              $('.afterMessageInstruct').fadeTo(250, 0.1).delay(100).fadeTo(250, 1);
-          }, 600);
-      }
-
-      munchTotal += 1;
-
-      k = Math.floor(Math.random() * 7);
-      j = Math.floor(Math.random() * 5);
-
-      if (munchCounter === 1) {
-              munchingAudio['munchSource' + k].connect(munchingAudio['gainMunchControl']);
-              munchingAudio['gainMunchControl'].connect(context.destination);
-              munchingAudio['munchSource' + k].connect(munchingAudio['convolver']);
-              munchingAudio['convolver'].connect(munchingAudio['gainMunchConvolver']);
-              munchingAudio['gainMunchConvolver'].connect(context.destination);
-              munchingAudio['gainMunchConvolver'].gain.value = 0.5 - munchTotal / 100;
-              munchingAudio['gainMunchControl'].gain.value = 0.5 + munchTotal / 100;
-              munchingAudio['munchSource' + k].start(0);
-              munchingAudio['munchSource' + k] = context.createBufferSource();
-              munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k];
-      }
-      if (munchCounter === 2) {
-          munchingAudio['crunchSource' + j].connect(munchingAudio['gainCrunchControl']);
-          munchingAudio['gainCrunchControl'].gain.value = 0.5 + munchTotal / 20;
-          munchingAudio['gainCrunchControl'].connect(context.destination);
-          munchingAudio['crunchSource' + j].start(0.250);
-          munchingAudio['crunchSource' + j] = context.createBufferSource();
-          munchingAudio['crunchSource' + j].buffer = munchingAudio['bufferList'][7 + j];
-      }
-      if (munchCounter === 3 && munchTotal < 45) {
-        if (Math.random() < munchTotal / 50) {
-            munchingAudio['gruntSource' + j].connect(munchingAudio['gainGruntControl']);
-            munchingAudio['gainGruntControl'].connect(context.destination);
-            munchingAudio['gruntSource' + j].connect(munchingAudio['overdrive']);
-            munchingAudio['overdrive'].connect(munchingAudio['gainGruntOverdrive']);
-            munchingAudio['gainGruntOverdrive'].connect(context.destination);
-            munchingAudio['gainGruntControl'].gain.value = munchTotal / 50;
-            munchingAudio['gainGruntOverdrive'].gain.value = (munchTotal > 25 ? munchTotal / 75 : 0);
-            munchingAudio['gruntSource' + j].start(0.5);
-            munchingAudio['gruntSource' + j] = context.createBufferSource();
-            munchingAudio['gruntSource' + j].buffer = munchingAudio['bufferList'][12 + j];
-        }
-        munchCounter = 0;
-      }
-
-
-
-      if (munchTotal > 39) {
-          if (munchTotal === 40) {
-              munchingAudio['chantSource'].connect(munchingAudio['gainChantControl']);
-              munchingAudio['gainChantControl'].connect(context.destination);
-              // munchingAudio['chantSource'].start(0);
-              playAudio('EOTBDrone');
-              $('#EOTBDrone').get(0).volume = 0;
-              var audioFadeIn = setInterval(function () {
-                  $('#EOTBDrone').get(0).volume += 0.1;
-              }, 500);
-              setTimeout(function () {
-                  clearInterval(audioFadeIn);
-              }, 5000);
-          }
-          munchingAudio['gainChantControl'].gain.value = munchTotal / 50;
-      }
-      if (munchTotal > 50) {
-        munchingAudio['gruntSource' + j].connect(munchingAudio['gainGruntControl']);
-        munchingAudio['gainGruntControl'].connect(context.destination);
-        munchingAudio['gruntSource' + j].connect(munchingAudio['overdrive']);
-        munchingAudio['overdrive'].connect(munchingAudio['gainGruntOverdrive']);
-        munchingAudio['gainGruntOverdrive'].connect(context.destination);
-        munchingAudio['gainGruntControl'].gain.value = munchTotal / 25;
-        munchingAudio['gainGruntOverdrive'].gain.value = munchTotal / 75;
-        munchingAudio['gruntSource' + j].start(0);
-        clearTimeout(starveTimer);
-        clearInterval(starveInterval);
-        clearInterval(munchBlink);
-        munchResult(1);
-        stop = 1;
-      }
-      if (!stop) {
-        $(document).one('keyup', function (e) {
-            if (munchCounter === 0) {
-                setTimeout(function() {
-                    starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
-                }, 500 * (1 - (munchTotal / 50)));
-            } else {
-                starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
-            }
-      });
-      }
-  } else {
-      $(document).one('keyup', function (e) {
-          if (munchCounter === 0) {
-              setTimeout(function() {
-                  starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
-              }, 500 * (1 - (munchTotal / 50)));
-          } else {
-              starveRelease(munchingAudio, audioTimer, munchCounter, munchTotal, starveTimer, starveCounter, starveInterval);
-          }
-  });
-  }
-}
-
-function munchingAudio(bufferList) {
-    var tuna = new Tuna(context);
-    munchingAudio = {};
-    for (var i = 0; i < 7; i++) {
-        munchingAudio['munchSource' + i] = context.createBufferSource();
-        munchingAudio['munchSource' + i].buffer = bufferList[i];
+    for (var i = 1; i < 7; i++) {
+        runningAudioPrepareArray.push('../audio/caw/caw' + i + '.mp3');
     }
-    for (var j = 0; j < 5; j++) {
-        munchingAudio['crunchSource' + j] = context.createBufferSource();
-        munchingAudio['crunchSource' + j].buffer = bufferList[j + 7];
-        munchingAudio['gruntSource' + j] = context.createBufferSource();
-        munchingAudio['gruntSource' + j].buffer = bufferList[j + 12];
-    }
-    munchingAudio['starveSource'] = context.createBufferSource();
-    munchingAudio['starveSource'].buffer = bufferList[17];
 
-    munchingAudio['chantSource'] = context.createBufferSource();
-    munchingAudio['chantSource'].buffer = bufferList[18];
-    munchingAudio['gainChantControl'] = context.createGain();
+    runningAudioPrepareArray.push('../audio/speech/mmm.mp3');
+    runningAudioPrepareArray.push('../audio/speech/mmm2.mp3');
+    runningAudioPrepareArray.push('../audio/speech/oh.mp3');
+    runningAudioPrepareArray.push('../audio/speech/tasty.mp3');
+    runningAudioPrepareArray.push('../audio/speech/yeah.mp3');
 
-    addAudio('EOTBDrone', './audio/EOTBDrone.ogg', 0, true);
 
-    munchingAudio['gainMunchConvolver'] = context.createGain();
-    munchingAudio['gainMunchControl'] = context.createGain();
-    munchingAudio['gainCrunchControl'] = context.createGain();
-    munchingAudio['gainGruntControl'] = context.createGain();
-    munchingAudio['gainGruntOverdrive'] = context.createGain();
-
-    var overdrive = new tuna.Overdrive({
-    outputGain: 0.1,         //0 to 1+
-    drive: 0.5,              //0 to 1
-    curveAmount: 0.95,          //0 to 1
-    algorithmIndex: 0,       //0 to 5, selects one of our drive algorithms
-    bypass: 1
-    });
-
-    var convolver = new tuna.Convolver({
-    highCut: 7500,                         //20 to 22050
-    lowCut: 20,                             //20 to 22050
-    dryLevel: 1,                            //0 to 1+
-    wetLevel: 3,                            //0 to 1+
-    level: 0.5,                               //0 to 1+, adjusts total output of both wet and dry
-    impulse: "./audio/impulses/PrimeShort.wav",    //the path to your impulse response
-    bypass: 0
-});
-
-    munchingAudio['convolver'] = convolver;
-    munchingAudio['overdrive'] = overdrive;
-
-    munchingAudio['bufferList'] = bufferList;
-    starveRelease(munchingAudio);
-}
-
-function munchingTime () {
-  $('#ansDiv').off('.answering');
-  clearScreen(0, ['.selectable', '.msg'], 200);
-  stopAudio('shiryu8');
-  setTimeout(function () {
-    showLine('You think.', 50, 1);
-    showLine('You think hard.', 50, 0, 0, 750);
-    showLine('Nothing is coming.', 50);
-    showLine('Thinking of nothing.', 50);
-    showLine('Nothing but... munching...', 100);
-    showLine('Press [SPACEBAR] to munch', 50, 0, 0, 100, 'afterMessageInstruct');
-
-    var munchingEffects = [];
-    for (var i = 0; i < 7; i++) {
-      munchingEffects.push('../audio/munching/munch' + i + '.mp3');
-    }
-    for (var j = 0; j < 5; j++) {
-      munchingEffects.push('../audio/munching/crunch' + j + '.mp3');
-    }
-    for (var k = 0; k < 5; k++) {
-        munchingEffects.push('../audio/munching/grunt' + k + '.mp3');
-    }
-    munchingEffects.push('../audio/munching/starvation.mp3');
-    munchingEffects.push('../audio/munching/chorus.mp3');
-
-    var bufferLoader = new BufferLoader(
+    bufferLoader = new BufferLoader(
         context,
-        munchingEffects,
-        munchingAudio
+        runningAudioPrepareArray,
+        runningAudioPrepare
     );
 
     bufferLoader.load();
-  }, 400);
 }
 
-function hideOnClick (id, message) {
-  $(document).on('click', id, function () {
-    showLine(message, 50, true);
-    $(id).fadeTo(100, 0);
-  });
+function runningAudioPrepare(bufferList) {
+    var tuna = new Tuna(context);
+
+    var filter = new tuna.Filter({
+        frequency: 3000, //20 to 22050
+        Q: 1, //0.001 to 100
+        gain: 0, //-40 to 40 (in decibels)
+        filterType: "lowpass", //lowpass, highpass, bandpass, lowshelf, highshelf, peaking, notch, allpass
+        bypass: 0
+    });
+
+    var runningAudio = {};
+
+    runningAudio['source'] = context.createBufferSource();
+    runningAudio['source'].buffer = bufferList[0];
+    runningAudio['gainControl'] = context.createGain();
+    runningAudio['gainFilter'] = context.createGain();
+    runningAudio['gainCawControl'] = context.createGain();
+    runningAudio['filter'] = filter;
+    runningAudio['bufferList'] = bufferList;
+
+    runningAudio['source'].connect(runningAudio['filter']);
+    runningAudio['filter'].connect(runningAudio['gainFilter']);
+    runningAudio['gainFilter'].connect(context.destination);
+    runningAudio['source'].connect(runningAudio['gainControl']);
+    runningAudio['gainControl'].connect(context.destination);
+    runningAudio['gainCawControl'].connect(context.destination);
+    runningAudio['gainFilter'].gain.value = 0;
+    runningAudio['gainControl'].gain.value = 0;
+
+    for (var i = 0; i < 6; i++) {
+        runningAudio['caw' + i] = context.createBufferSource();
+        runningAudio['caw' + i].buffer = bufferList[i + 1];
+        runningAudio['caw' + i].connect(runningAudio['gainCawControl']);
+    }
+                                                                                // TODO set up sounds for spacebar eatings
+    running(runningAudio);
 }
 
+function running (runningAudio) {
+    showLine('Oh, it was running', 100, 1);
+    showLine('RUN', 50, 0, 0, 0, 'afterMessageInstructMiddle', 1, 1);
 
-function scene1starter () {
-    showLine('What will you do?', 50, true);
+    var audioFadeIn = setInterval(function () {
+      runningAudio['gainFilter'].gain.value += 0.05;
+    }, 250);
+    setTimeout(function() {
+      clearInterval(audioFadeIn);
+    }, 5000);
 
-    answerOptions(['SIT', 'STAND', 'THINK ABOUT WHAT YOU\'VE DONE'], ['WHY', 'WHY', 'OH GOD WHY']);
+    runningAudio['source'].start(0, 12);
 
-    // TODO I will clean this up I swear. It just hurts for me to look at for too long of a period
-    $('#ansDiv').on('mousedown.answering', '#ansOp0', function () {
-      console.log('clicked sit');
-    switchOnClick([$('#ansOp1').css('opacity') === '1' || $('#ansOp1').css('opacity') === '0.5',
-                              $('#ansOp1').css('opacity') === '0'],[[0, 1, 1],[0,1,1]], ['You are now sitting. Beautiful.', 'You are now sitting. Beautiful.']);
-                            });
-    $('#ansDiv').on('mousedown.answering', '#ansOp1', function () {
-      console.log('clicked stand');
-    switchOnClick([$('#ansOp0').css('opacity') === '1' && $('#ansOp1').css('opacity') === '1',
-                              $('#ansOp0').css('opacity') === '0',
-                              $('#ansOp1').css('opacity') === '0.5'], [[1, 0, 1],[1, 0, 1],[ 1, 0, 1]], ['You continue to stand. You are thinking nothing.', 'You are now standing. Horrible.', 'You\'ve been standing a while, perhaps you should SIT and THINK ABOUT WHAT YOU\'VE DONE.']);
-                            });
-    $('#ansDiv').on('mousedown.answering', '#ansOp2', function () {
-      console.log('clicked think');
-    switchOnClick([($('#ansOp1').css('opacity') === '1' && $('#ansOp0').css('opacity') === '1') || ($('#ansOp1').css('opacity') === '0.5' && $('#ansOp0').css('opacity') === '1'),
-                              $('#ansOp1').css('opacity') === '1' && $('#ansOp0').css('opacity') === '0',
-                              $('#ansOp1').css('opacity') === '0' && $('#ansOp0').css('opacity') === '1'], [[1, 0.5, 1],[0, 0, 0],[1, 0.5, 1]], ['That would be exhausting.', 'finish', 'That would be exhausting.'], munchingTime);
-                            });
+    var caughtStatus = false;
+    var clickCounter = 0, clickIncrement = 1;
+    var extra = 10000;
+    var policePosition = -1, birdPosition = [];
+    var birdCounter = 0;
+    var clickInterval = 100
+
+    var windowRatio = ($(window).width() / ((1850 - clickInterval + extra) * 0.01));
+
+  setTimeout(function () {
+    alternateClicks(0, 0, [
+        function () {
+            if (clickCounter === 0) {
+                runningAudio['gainControl'].gain.value = 1;
+                runningAudio['filter'].disconnect();
+            }
+            clickCounter += clickIncrement;
+            currentPosition = (clickCounter - 1) * ($(window).width() / ((1850 - clickInterval + extra) * 0.01));
+            starredStep(clickCounter, clickInterval, extra);
+            policePosition = policeman(clickCounter, clickInterval, extra);               // occurs on certain numbers of clicks
+            birdInfo = bird(currentPosition, clickInterval, extra, birdCounter, birdInfo, runningAudio);                      // occurs randomly
+            birdCounter = birdInfo['birdCounter'];
+
+            caughtStatus = checkPolicePosition(clickCounter, policePosition, extra);
+
+            if (birdInfo['eating'] === true) {
+                clickIncrement += 1;
+                starredStep(clickCounter, clickInterval, extra);
+                birdInfo['eating'] = false;
+                setTimeout(function () {
+                    clickIncrement = 1;
+                }, 1000);
+            }
+        },
+        function () {
+            clickCounter += 1;
+            starredStep(clickCounter, clickInterval, extra);
+
+            caughtStatus = checkPolicePosition(clickCounter, policePosition, extra, clickInterval);
+        },
+        function () {},
+        function () {},
+        function () {
+          if (caughtStatus) {
+            var audioSlowdown = setInterval(function () {
+              runningAudio['source'].playbackRate.value -= 0.05;
+            }, 250);
+            caught(caughtStatus);
+          } else {
+            runningAudio['source'].connect(runningAudio['filter']);
+            runningAudio['filter'].connect(runningAudio['gainFilter']);
+            runningAudio['gainFilter'].connect(context.destination);
+            runningAudio['gainFilter'].gain.value = 1;
+            var audioFadeOut = setInterval(function () {
+              runningAudio['gainFilter'].gain.value -= 0.05;
+            }, 250);
+            runningAudio['gainControl'].gain.value = 0;
+          }
+
+          setTimeout(function () {
+            clearInterval(audioSlowdown);
+            clearInterval(audioFadeOut);
+            runningAudio['source'].stop();
+            caught(caughtStatus);
+          }, 5000);
+        }], function () {
+            return Boolean(policePosition > clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01))) || (clickCounter > 115);
+        });
+  }, 1100);
 }
 
+function policeman (clickCounter, clickInterval, extra) {
+    if (clickCounter === 1) {
+        // insert audio hey freeze!
+        policeIntervalCounter = 0;
+        showLine('FREEZE!', 50, 0, 1, 0, 'chaserSpeech', 1, 1);
+        $('.chaserSpeech').css({
+            'position'  :   'fixed',
+            'left'      :   policeIntervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+            'top'       :   '75%',
+            'font-size' :   '52px'
+        }).animate({
+            'opacity'   :   '0',
+            'left'      :   '-=10%'
+        }, 2000);
 
-$(document).ready(function () {
+        policeTimer = setInterval(function() {
+            policeIntervalCounter += 1;
+            starredStep(policeIntervalCounter, clickInterval, extra, '^', 5);
+        }, 250);
+    } else if (clickCounter === 15) {
+        showLine('BANG!', 50, 0, 1, 0, 'chaserSpeech', 1, 1);
+        $('.chaserSpeech').css({
+            'position'  :   'fixed',
+            'left'      :   policeIntervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+            'top'       :   '75%'
+        }).animate({
+            'opacity'   :   '0',
+            'left'      :   '-=10%'
+        }, 2000);
+    }
+    return (policeIntervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
+}
 
-      setTimeout(function () {
-        showLine('Welcome to Moon Prison.', 50, 1);
-        showLine('This is your cell.', 50);
-        showLine('A perfect glass room and a sun that never sets.', 50);
-        showLine('Amazing.', 100);
-        nextScreenLoader(scene1starter, 300);
-    }, 200);
-});
+function checkPolicePosition (clickCounter, policePosition, extra, clickInterval) {
+    if ((policePosition > clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)))) {
+      return true;
+  } else {
+      return false;
+  }
+}
+
+function bird(clickCounter, clickInterval, extra, birdCounter, birdInfo, runningAudio) {
+    console.log(clickCounter);
+    if (Math.random() > (0.9 + 0.1 * (clickCounter / 1000))) {
+        birdCounter += 1;
+        birdInfo = setBirdIntervals(birdCounter, clickInterval, extra, birdInfo, currentPosition, runningAudio);
+    }
+    for (var i = 0; i < birdCounter; i++) {
+        birdInfo['birdPosition'][i] = birdIntervalCounter[i] * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01))
+    }
+    birdInfo['birdCounter'] = birdCounter;
+    return birdInfo;
+}
+
+function setBirdIntervals(birdCounter, clickInterval, extra, birdInfo, clickCounter, runningAudio) {
+    birdIntervalCounter[birdCounter] = 0;
+
+    birdInterval[birdCounter] = setInterval(function () {
+        birdIntervalCounter[birdCounter] += 1;
+        buttonInstructDetector[birdCounter] = (buttonInstructDetector[birdCounter] === undefined ? false : buttonInstructDetector[birdCounter])
+        birdPosition[birdCounter] = birdIntervalCounter[birdCounter] * ($(window).width() / ((1850 - clickInterval + extra) * 0.01));
+        checkBirdPosition(clickCounter, birdInfo, clickInterval, extra);
+        birdAnimation(birdPosition[birdCounter], birdIntervalCounter[birdCounter], birdCounter);
+    }, 250);
+
+    cawInterval[birdCounter] = setInterval(function () {
+        var randomizer = Math.random();
+        showLine('[caw]', 50, 0, 1, 0, 'birdSpeech' + birdCounter, 1, 1);
+        $('.birdSpeech' + birdCounter).css({
+            'position'  :   'fixed',
+            'right'      :   (birdPosition[birdCounter] + 100) + 'px',
+            'top'       :   '70%',
+            'font-size' :   '10px'
+        }).animate({
+            'opacity'   :   '0',
+            'right'      :   '+=10%',
+            'font-size' :   '+=10px'
+        }, 1000 + randomizer * 1000);
+        setTimeout(function () {
+            clearScreen(0, ['.birdSpeech' + birdCounter], 0);
+        }, 1000 + randomizer * 1000);
+        playCawSound(runningAudio);
+    }, 2000)
+
+    var eating = false;
+
+    return {
+        birdInterval: birdInterval,
+        cawInterval: cawInterval,
+        birdIntervalCounter: birdIntervalCounter,
+        birdPosition: birdPosition,
+        buttonInstructDetector: buttonInstructDetector,
+        eating: eating
+    }
+}
+
+function checkBirdPosition (clickCounter, birdInfo, clickInterval, extra) {
+    for (var i = 1; i < birdInfo['birdCounter'] + 1; i++) {
+        if ((($(window).width() - birdInfo['birdPosition'][i]) < currentPosition + 250) && (birdInfo['buttonInstructDetector'][i] === false)) {
+            birdInfo['buttonInstructDetector'][i] = true;
+            showLine('[spacebar]', 50, 0, 1, 0, 'buttonPressInstruct' + i, 1, 1);
+            $('.buttonPressInstruct' + i).css({
+                'position'  :   'fixed',
+                'right'      :   birdInfo['birdPosition'][i] + 'px',
+                'top'       :   '65%',
+                'font-size' :   '20px'
+            }).animate({
+                'opacity'   :   '50',
+                'right'      :   '+=10%'
+            }, 1500);
+            var currentBird = i;
+            checkForSpacebarPress(clickCounter, clickInterval, extra, currentBird);
+        }
+
+        if (($(window).width() - birdInfo['birdPosition'][i]) < currentPosition - 150) {            // cancel spacebar listener
+            clearScreen(0, ['.buttonPressInstruct' + i], 0);
+            $(document).off('keydown.bird' + i);
+        }
+        if ($(window).width() < birdInfo['birdPosition'][i] + 200) {
+            clearInterval(cawInterval[i]);
+            clearInterval(birdInterval[i]);
+        }
+    }
+}
+
+function birdAnimation (birdPosition, birdIntervalCounter, birdCounter) {
+    if (birdIntervalCounter % 2 === 0) {
+        showLine('_/_', 0, 0, 1, 0, 'birdAnim' + birdCounter, 1, 1);
+        $('.birdAnim' + birdCounter).css({
+            'position'  :   'fixed',
+            'right'      :   birdPosition + 'px',
+            'top'       :   '70%',
+            'font-size' :   '20px'
+        });
+        setTimeout(function () {
+            clearScreen(0, ['.birdAnim' + birdCounter], 0);
+        }, 200);
+    } else {
+        showLine('-\\-', 0, 0, 1, 0, 'birdAnim' + birdCounter, 1, 1);
+        $('.birdAnim' + birdCounter).css({
+            'position'  :   'fixed',
+            'right'      :   birdPosition + 'px',
+            'top'       :   '70%',
+            'font-size' :   '20px'
+        });
+        setTimeout(function () {
+            clearScreen(0, ['.birdAnim' + birdCounter], 0);
+        }, 200);
+    }
+}
+
+function playCawSound (runningAudio) {
+    var i = Math.floor(Math.random() * 6);
+
+    runningAudio['caw' + i].start(0);
+
+    runningAudio['caw' + i] = context.createBufferSource();
+    runningAudio['caw' + i].buffer = runningAudio['bufferList'][i + 1];
+    runningAudio['caw' + i].connect(runningAudio['gainCawControl']);
+}
+
+function checkForSpacebarPress (clickCounter, clickInterval, extra, currentBird) {
+    $(document).on('keydown.bird' + currentBird, function (e) {
+        if (e.which === 32) {
+            $(document).off('keydown.bird' + currentBird);
+            clearInterval(cawInterval[currentBird]);
+            clearInterval(birdInterval[currentBird]);
+            clearScreen(0, ['.buttonPressInstruct' + currentBird], 0);
+
+            birdInfo['eating'] = true;
+
+            // for (var i = 0; i < 4; i++) {
+            //     // console.log(clickCounter);
+            //     // clickCounter += 4;
+            //     // starredStep(clickCounter, clickInterval, extra);
+            // }
+
+
+            // TODO implement speed boost properly
+
+            // TODO play munching sound
+        }
+    });
+}
+
+function caught (caughtStatus) {
+    $(document).bind('contextmenu', function (e) {
+      e.preventDefault();
+      return false;
+    });
+    for (var i = 0; i < cawInterval.length; i++) {
+        clearInterval(cawInterval[i]);
+        clearInterval(birdInterval[i]);
+    }
+    if (caughtStatus) {
+        clearInterval(policeTimer);
+    } else {
+        setTimeout(function () {
+            clearInterval(policeTimer);
+        }, 1000);
+    }
+    clearScreen(300, ['.chaserSpeech', '.anyText', '.msg'], 700);
+    setTimeout(function () {
+        $(document).unbind('contextmenu');
+        loadScene('/scenes/scene2.js');
+    }, 2000);
+}
+
+// function hideOnClick (id, message) {
+//   $(document).on('click', id, function () {
+//     showLine(message, 50, true);
+//     $(id).fadeTo(100, 0);
+//   });
+// }
