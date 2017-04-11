@@ -40,7 +40,7 @@ function firstScreen(bufferList) {
             setTimeout(function () {
                 clearInterval(fadeInInterval);
             }, 2400);
-        }, 10000)
+        }, 10000);
         nextScreenLoader(loadOpening, 4000);
     });
 }

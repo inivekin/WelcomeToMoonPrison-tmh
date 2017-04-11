@@ -225,27 +225,11 @@ function createStarIndicator(mousePos) {
     }).html('*').appendTo('body');
 }
 
-<<<<<<< HEAD
-function fallingStars (totalClicks, eotb) {
-    for (var i = 0; i < totalClicks; i++) {
-        clearInterval(intId[i]);
-    }
-    setTimeout(function () {
-        for (var i = 0; i < totalClicks; i++) {
-            $('#star' + i).animate({
-                'top' : '100%',
-                'opacity' : '0'
-            }, 2000 * Math.random());
-        }
-        clearScreen(0, ['starField', 'msg'], 1900);
-        eotb['source'].stop();                                                  // TODO add effect instead of random stop
-=======
 function animateMouseMoveIndicator(targetPos) {
     $('#starIndicator').animate({
         'left' : (targetPos[0]) + 'px',
         'bottom': (targetPos[1]) + 'px',
         'opacity': '0'
->>>>>>> df18c7b20b13f58a0bb0922ddc346c82a56230cf
     }, 1000);
     setTimeout(function () {
         $('#starIndicator').remove();
