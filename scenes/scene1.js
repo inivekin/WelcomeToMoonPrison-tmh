@@ -45,6 +45,334 @@ function scene1Question1 () {
 }
 
 function scene1Screen2 () {
+    $('#ansDiv').off('.answering');
+    clearScreen(0, ['.selectable', '.msg'], 200);
+    stopAudio('shiryu8');
+    setTimeout(function () {
+        showLine('What\'s this...?', 50, 1, 0, 2000);
+        showBirdWindow();
+        setTimeout(function () {
+            showBirdImage();
+        }, 500);
+        showLine('What glorious providence.', 50, 0, 0);                        // TODO add click instruction
+        cooingAudioLoad();
+        showLine('[Click] to COO', 100, 0, 0, 500, 'afterMessageInstruct');
+    }, 400);
+}
+
+function showBirdWindow() {
+    var birdWindow = document.createElement('div');
+    $('body').append(birdWindow);
+    $(birdWindow).attr('id', 'birdWindow').attr('class', 'cooElement');
+    $(birdWindow).css({
+        'display'   : 'none',
+        'position'  : 'absolute',
+        'background-color': 'white',
+        'box-shadow': '4px 4px 4px #BF16B6',
+        'right'     : '5%',
+        'top'       : '10%',
+        'width'     : '200px',
+        'height'    : '200px',
+        'opacity'   : '0',
+        'z-index'   : '-10'
+    });
+    setTimeout(function () {
+        $(birdWindow).fadeTo(900, 1);
+    }, 100);
+}
+
+function showBirdImage() {
+    var birdWindow = document.getElementById('birdWindow');
+    var birdImage = document.createElement('img');
+    $('body').append(birdImage);
+    $(birdImage).attr('id', 'birdImage').attr('class', 'cooElement');
+    $(birdImage).attr('src', './graphics/birdImage2.png');
+    $(birdImage).css({
+        'display'   : 'none',
+        'position'  : 'absolute',
+        'right'     : '5%',
+        'top'       : '13%',
+        'width'     : 'auto',
+        'height'    : '150px',
+        'opacity'   : '0',
+        'filter'    : 'brightness(0)',
+        'z-index'   : '10'
+    });
+
+    setTimeout(function () {
+        $(birdImage).fadeTo(900, 1);
+    }, 100);
+}
+
+function cooingAudioLoad() {
+    var cooingEffects = [];
+
+    for (var i = 1; i < 13; i++) {
+        cooingEffects.push('../audio/coo/coo' + i + '.mp3');
+    }
+
+    var bufferLoader = new BufferLoader(
+        context,
+        cooingEffects,
+        cooingAudioPrepare
+    );
+
+    bufferLoader.load();
+}
+
+function cooingAudioPrepare(bufferList) {
+    var cooingAudio = {};
+    var tuna = new Tuna(context);
+
+    var filter = new tuna.Phaser({
+    rate: 1.2,                     //0.01 to 8 is a decent range, but higher values are possible
+    depth: 0.3,                    //0 to 1
+    feedback: 0.2,                 //0 to 1+
+    stereoPhase: 30,               //0 to 180
+    baseModulationFrequency: 700,  //500 to 1500
+    bypass: 0
+});
+
+    cooingAudio['bufferList'] = bufferList;
+
+    cooingAudio['gainControl'] = context.createGain();
+    cooingAudio['gainFilter'] = context.createGain();
+    cooingAudio['filter'] = filter;
+
+    for (var i = 0; i < bufferList.length; i++) {
+        cooingAudio['coo' + i] = context.createBufferSource();
+        cooingAudio['coo' + i].buffer = bufferList[i];
+
+        cooingAudio['coo' + i].connect(cooingAudio['gainControl']);
+        cooingAudio['coo' + i].connect(cooingAudio['filter']);
+    }
+
+    cooingAudio['filter'].connect(cooingAudio['gainFilter']);
+    cooingAudio['gainFilter'].connect(context.destination);
+    cooingAudio['gainControl'].connect(context.destination);
+    cooingAudio['gainFilter'].gain.value = 0;
+    cooingAudio['gainControl'].gain.value = 0;
+
+    newTargetPos(cooingAudio, 0);
+}
+
+function newTargetPos(cooingAudio, cooLoopCounter) {
+    var actualPos = [];
+    console.log(cooLoopCounter);
+    var targetPos = genRandomTargetPos();
+    cooing(cooingAudio, targetPos, actualPos, cooLoopCounter)
+}
+
+function cooing(cooingAudio, targetPos, actualPos, cooLoopCounter) {
+    $(document).off("mousemove");                                               // clears mousemove listener for any repeats
+    console.log(cooLoopCounter);
+    $(document).one("click", function(event) {
+        mouseMoveIndicator(targetPos, event);
+        actualPos = checkClickPosition();
+        console.log(cooLoopCounter);
+        playResultingCoo(actualPos, targetPos, cooingAudio, cooLoopCounter);
+    });
+
+}
+
+function genRandomTargetPos() {
+    var randomClickPos = $('<div/>').attr('id', 'targetPos');
+    var viewportWidth = $(window).width();
+    var viewportHeight = $(window).height();
+
+    var posX = (Math.random() * $(window).width()).toFixed();
+    var posY = (Math.random() * $(window).height() * 0.7).toFixed();
+
+    posX = minMaxLimiter(posX, 150, $(window).height() - 150);
+    posY = minMaxLimiter(posY, 150, $(window).height() - 150);
+
+    randomClickPos.css({
+        'position'    : 'absolute',
+        'left'        : posX + 'px',
+        'bottom'      : posY + 'px'
+    }).appendTo('body');
+
+    return [posX, posY];
+}
+
+function minMaxLimiter(number, lower, upper) {
+    number = (number < lower ? lower : number);
+    number = (number > upper ? upper : number);
+    return number;
+}
+
+function mouseMoveIndicator(targetPos, event) {
+    var posX, posY, mousePos = [];
+
+    posX = event.pageX;
+    posY = event.pageY;
+    mousePos = [posX, posY];
+
+    createStarIndicator(mousePos);
+    animateMouseMoveIndicator(targetPos);
+}
+
+function createStarIndicator(mousePos) {
+    var starIndicator = document.createElement('div');
+    $(starIndicator).attr('id', 'starIndicator').css({
+        'font-family' : 'Gaiatype',
+        'color'       : 'white',
+        'text-shadow' : '3px 3px 0px #BF4494',
+        'position'    : 'absolute',
+        'left'        : mousePos[0] + 'px',
+        'bottom'      : ($(window).height() - mousePos[1]) + 'px',
+        'z-index'     : '20'
+    }).html('*').appendTo('body');
+}
+
+function animateMouseMoveIndicator(targetPos) {
+    $('#starIndicator').animate({
+        'left' : (targetPos[0]) + 'px',
+        'bottom': (targetPos[1]) + 'px',
+        'opacity': '0'
+    }, 1000);
+    setTimeout(function () {
+        $('#starIndicator').remove();
+    }, 700);
+}
+
+function checkClickPosition() {
+    var posX, posY;
+
+    posX = event.pageX;
+    posY = $(window).height() - event.pageY;
+
+    return [posX, posY];
+}
+
+function playResultingCoo(actualPos, targetPos, cooingAudio, cooLoopCounter) {
+
+    var xDiff = (targetPos[0] - actualPos[0]) / (targetPos[0] > actualPos[0] ? targetPos[0] : actualPos[0]);
+    var yDiff = (targetPos[1] - actualPos[1]) / (targetPos[1] > actualPos[1] ? targetPos[1] : actualPos[1]);
+    console.log(actualPos + '    ' + targetPos);
+    console.log('xDiff: ' + xDiff + ' yDiff: ' + yDiff);
+
+    if (Math.abs(xDiff) < 0.05) {                    //checking click position against target position
+        console.log('x-axis satisfied');
+        if (Math.abs(yDiff) < 0.05) {
+            console.log('y-axis satisfied, playing sound...');
+            console.log(cooLoopCounter);
+            playPureCoo(cooingAudio, cooLoopCounter);
+            correctClickAnimation(actualPos);                                   // TODO add bird flutter sound
+        } else {
+            playDistortedCoo(xDiff, yDiff, cooingAudio, targetPos, actualPos, cooLoopCounter);
+        }
+    } else {
+        playDistortedCoo(xDiff, yDiff, cooingAudio, targetPos, actualPos, cooLoopCounter);
+    }
+}
+
+function playPureCoo(cooingAudio, cooLoopCounter) {
+    var i = Math.floor(Math.random() * cooingAudio['bufferList'].length);
+    cooingAudio['gainControl'].gain.value = 1;
+    cooingAudio['coo' + i].start(0);
+
+    // recreating buffer source
+    setTimeout(function () {
+        cooingAudio['gainControl'].gain.value = 0;
+
+        cooingAudio['coo' + i] = context.createBufferSource();
+        cooingAudio['coo' + i].buffer = cooingAudio['bufferList'][i];
+
+        cooingAudio['coo' + i].connect(cooingAudio['gainControl']);
+        cooingAudio['coo' + i].connect(cooingAudio['filter']);
+
+        $('#targetPos').remove();
+
+        cooLoopCounter += 1;
+        var continueCheck = lightenBird(cooLoopCounter);
+
+        if (continueCheck) {
+            clearScreen(500, ['.msg'], 0);
+            addAudio('EOTBDrone', './audio/EOTBDrone.ogg', 0, true);
+            playAudio('EOTBDrone');
+
+            munchingAudioLoad();
+        } else {
+            newTargetPos(cooingAudio, cooLoopCounter);
+        }
+    }, 1000);
+}
+
+function correctClickAnimation(actualPos) {
+    var successStar = document.createElement('div');
+    $('body').append(successStar)
+    $(successStar).attr('class', 'anyText').css({
+        'position'  :   'absolute',
+        'left'      :   actualPos[0],
+        'bottom'    :   actualPos[1],
+        'font-size' :   '10px',
+        'opacity'   :   '0'
+    }).html('*').animate({
+        'font-size' :   '+=40px',
+        'opacity'   :   '1'
+    }, 1000, 'linear');
+    setTimeout(function () {
+        $(successStar).remove();
+    }, 1100);
+}
+
+function playDistortedCoo(xDiff, yDiff, cooingAudio, targetPos, actualPos, cooLoopCounter) {
+    var i = Math.floor(Math.random() * cooingAudio['bufferList'].length);
+
+    // Altering audio distortion based on distance from target
+    cooingAudio['coo' + i].playbackRate.value = (1 - Math.abs(xDiff) < 0.6 ? 0.6 : 1 - Math.abs(xDiff));            // TODO can go too slow to hear, give min value
+    cooingAudio['gainFilter'].gain.value = Math.abs(yDiff) * 2;
+    cooingAudio['gainControl'].gain.value = 1 - Math.abs(yDiff) * 2;
+
+    $('.afterMessageInstruct').fadeTo(250, 0.5);
+
+    cooingAudio['coo' + i].start(0);
+
+    setTimeout(function () {                                                    // TODO add on/off changes for click instruction based on this timeout
+        $('.afterMessageInstruct').fadeTo(850, 1);
+
+        cooingAudio['coo' + i] = context.createBufferSource();
+        cooingAudio['coo' + i].buffer = cooingAudio['bufferList'][i];
+
+        cooingAudio['coo' + i].connect(cooingAudio['gainControl']);
+        cooingAudio['coo' + i].connect(cooingAudio['filter']);
+
+        // resetting values
+        cooingAudio['coo' + i].playbackRate.value = 1;
+        cooingAudio['gainFilter'].gain.value = 0;
+        cooingAudio['gainControl'].gain.value = 0;
+
+        cooing(cooingAudio, targetPos, actualPos, cooLoopCounter);                                                        // TODO have it repeat without regenning random position for this
+    }, 1000);
+}
+
+function lightenBird(cooLoopCounter) {
+    $({brightnessValue: (cooLoopCounter - 1) * 0.1}).animate({brightnessValue: (cooLoopCounter) * 0.1}, {
+        duration: 1000,
+        easing: 'swing', // or "linear"
+                         // use jQuery UI or Easing plugin for more options
+        step: function() {
+            console.log(this.brightnessValue);
+            $('#birdImage').css({
+                "-webkit-filter": "brightness("+this.brightnessValue+")",
+                "filter": "brightness("+this.brightnessValue+")"
+            });
+        }
+    });
+
+    $('#birdImage').animate({
+        'height'    :   '+=50px'                                                // Or fade out fade in at larger size?
+    });
+
+    if (cooLoopCounter === 10) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+/* function scene1Screen2 () {
   $('#ansDiv').off('.answering');
   clearScreen(0, ['.selectable', '.msg'], 200);
   stopAudio('shiryu8');
@@ -57,7 +385,7 @@ function scene1Screen2 () {
     showLine('Press [SPACEBAR] to munch', 50, 0, 0, 100, 'afterMessageInstruct');
     munchingAudioLoad();
     }, 400);
-}
+} */
 
 function munchingAudioLoad () {
     var munchingEffects = [];
@@ -73,6 +401,10 @@ function munchingAudioLoad () {
     munchingEffects.push('../audio/munching/starvation.mp3');
     munchingEffects.push('../audio/munching/chorus.mp3');
 
+    for (var l = 13; l < 22; l++) {
+        munchingEffects.push('../audio/coo/coo' + l + '.mp3');
+    }
+
     var bufferLoader = new BufferLoader(
         context,
         munchingEffects,
@@ -83,6 +415,9 @@ function munchingAudioLoad () {
 }
 
 function munchingAudioPrepare (bufferList) {
+    showLine('NOW! ATTACK IT NOW!!', 100, 1, 0, 0, '', 1, 1);
+    showLine('PRESS [SPACEBAR] TO MUNCH', 50, 0, 0, 0, 'afterMessageInstruct', 1, 1);
+
     var tuna = new Tuna(context);
     munchingAudio = {};
     for (var i = 0; i < 7; i++) {
@@ -97,6 +432,11 @@ function munchingAudioPrepare (bufferList) {
         munchingAudio['gruntSource' + j].buffer = bufferList[j + 12];
     }
 
+    for (var l = 0; l < 9; l++) {
+        munchingAudio['coo' + l] = context.createBufferSource();
+        munchingAudio['coo' + l].buffer = bufferList[l + 19];
+    }
+
     munchingAudio['starveSource'] = context.createBufferSource();
     munchingAudio['starveSource'].buffer = bufferList[17];
 
@@ -104,13 +444,13 @@ function munchingAudioPrepare (bufferList) {
     munchingAudio['chantSource'].buffer = bufferList[18];
     munchingAudio['gainChantControl'] = context.createGain();
 
-    addAudio('EOTBDrone', './audio/EOTBDrone.ogg', 0, true);
-
     munchingAudio['gainMunchConvolver'] = context.createGain();
     munchingAudio['gainMunchControl'] = context.createGain();
     munchingAudio['gainCrunchControl'] = context.createGain();
     munchingAudio['gainGruntControl'] = context.createGain();
     munchingAudio['gainGruntOverdrive'] = context.createGain();
+
+    munchingAudio['gainCooControl'] = context.createGain();
 
     var overdrive = new tuna.Overdrive({
     outputGain: 0.1,         //0 to 1+
@@ -176,6 +516,7 @@ function starveOnRelease (munchingAudio, munchCounter = 0, munchTotal = 0) {
               clearTimeout(audioTimer);
               clearInterval(starveInterval);
               munchingAudio['starveSource'].stop();
+              $(document).off('keydown');
               munchingResult(0);
             }
         }, 1000);
@@ -213,9 +554,15 @@ function munchOnPress (e, munchingAudio, munchCounter, munchTotal) {
 
       k = Math.floor(Math.random() * 7);
       j = Math.floor(Math.random() * 5);
+      l = Math.floor(Math.random() * 9);
 
       if (munchCounter === 1) {
           playMunchSound(munchingAudio, munchTotal, k);
+          playPainedCoo(munchingAudio, munchTotal, l);
+          $('#birdWindow').animate({
+              'height' : $(window).height() * (munchTotal / 50) * 0.7 + 200 + 'px',
+              'width'  : $(window).width() * (munchTotal / 50) * 0.8 + 200 + 'px'
+          }, 250, 'linear');
       }
       if (munchCounter === 2) {
           playCrunchSound(munchingAudio, munchTotal, j);
@@ -232,7 +579,6 @@ function munchOnPress (e, munchingAudio, munchCounter, munchTotal) {
               munchingAudio['chantSource'].connect(munchingAudio['gainChantControl']);
               munchingAudio['gainChantControl'].connect(context.destination);
               // munchingAudio['chantSource'].start(0);
-              playAudio('EOTBDrone');
               $('#EOTBDrone').get(0).volume = 0;
               var audioFadeIn = setInterval(function () {
                   $('#EOTBDrone').get(0).volume += 0.1;
@@ -246,7 +592,9 @@ function munchOnPress (e, munchingAudio, munchCounter, munchTotal) {
       if (munchTotal > 50) {
         playGruntSound(munchingAudio, munchTotal, j);
         clearInterval(munchBlink);
-        munchingResult(1);
+        setTimeout(function () {
+            munchingResult(1);
+        }, 500);
         stop = 1;
       }
       if (!stop) {
@@ -279,11 +627,24 @@ function playMunchSound (munchingAudio, munchTotal, k) {
     munchingAudio['munchSource' + k].connect(munchingAudio['convolver']);
     munchingAudio['convolver'].connect(munchingAudio['gainMunchConvolver']);
     munchingAudio['gainMunchConvolver'].connect(context.destination);
-    munchingAudio['gainMunchConvolver'].gain.value = 0.5 - munchTotal / 100;
-    munchingAudio['gainMunchControl'].gain.value = 0.5 + munchTotal / 100;
+    munchingAudio['gainMunchConvolver'].gain.value = 0.5 - munchTotal / 50;
+    munchingAudio['gainMunchControl'].gain.value = 0.5 + munchTotal / 50;
     munchingAudio['munchSource' + k].start(0);
     munchingAudio['munchSource' + k] = context.createBufferSource();
     munchingAudio['munchSource' + k].buffer = munchingAudio['bufferList'][k];
+}
+
+function playPainedCoo (munchingAudio, munchTotal, l) {
+    munchingAudio['coo' + l].connect(munchingAudio['gainCooControl']);
+    munchingAudio['gainCooControl'].connect(context.destination);
+    munchingAudio['coo' + l].connect(munchingAudio['convolver']);
+    munchingAudio['convolver'].connect(munchingAudio['gainMunchConvolver']);
+    munchingAudio['gainMunchConvolver'].connect(context.destination);
+    munchingAudio['gainMunchConvolver'].gain.value = 0.5 - munchTotal / 50;
+    munchingAudio['gainCooControl'].gain.value = 1 - munchTotal / 50;
+    munchingAudio['coo' + l].start(0.200);
+    munchingAudio['coo' + l] = context.createBufferSource();
+    munchingAudio['coo' + l].buffer = munchingAudio['bufferList'][k];
 }
 
 function playCrunchSound (munchingAudio, munchTotal, j) {
@@ -309,13 +670,24 @@ function playGruntSound (munchingAudio, munchTotal, j) {
 }
 
 function munchingResult (result) {
+    clearScreen(300, ['.msg', '#birdImage'], 300);
   if (result) {
-    clearScreen(300, ['.msg'], 300);
     showLine('', 0, 1);                                                         // added just to clear totalDelay, surely a better way is possible?
-    nextScreenLoader(scene1Screen3, 1500);
+    $('#birdWindow').animate({
+        'top'    : '0%',
+        'right'  : '0%',
+        'height' : $(window).height() + 'px',
+        'width'  : $(window).width() + 'px'
+    }, 1000)
+    clearScreen(1000, ['#birdWindow'], 1000);
+    nextScreenLoader(scene1Screen3, 2000);
   } else {
-    clearScreen(300, ['.msg'], 600);
     setTimeout(function () {
+        $('#birdWindow').animate({
+            'height' : '0px',
+            'width'  : '0px'
+        }, 1000)
+        clearScreen(500, ['#birdWindow'], 1000);
       showLine('You have DIED of STARVATION', 100, 1, 0, 1000, 'starveDeath');
       setTimeout(function () {
           loadScene('/scenes/scene2.js');
@@ -500,17 +872,38 @@ function fallingStars (totalClicks, eotb) {
                 'opacity' : '0'
             }, 2000 * Math.random());
         }
+
         clearScreen(0, ['.starField', '.msg'], 1900);
-        eotb['source'].stop();                                                  // TODO add effect instead of random stop
+
+        var eotbFadeOut = setInterval(function () {
+            eotb['gainControl'].gain.value -= 0.05;
+            if (eotb['gainControl'].gain.value < 0.1) {
+                eotb['source'].stop(0);
+                clearInterval(eotbFadeOut);
+            }
+        }, 500);
     }, 1000);
 }
 
 function runningAudioLoad () {
+    var runningAudioPrepareArray = [];
+
+    runningAudioPrepareArray.push('../audio/MoDemJams.mp3');
+
+    for (var i = 1; i < 7; i++) {
+        runningAudioPrepareArray.push('../audio/caw/caw' + i + '.mp3');
+    }
+
+    runningAudioPrepareArray.push('../audio/speech/mmm.mp3');
+    runningAudioPrepareArray.push('../audio/speech/mmm2.mp3');
+    runningAudioPrepareArray.push('../audio/speech/oh.mp3');
+    runningAudioPrepareArray.push('../audio/speech/tasty.mp3');
+    runningAudioPrepareArray.push('../audio/speech/yeah.mp3');
+
+
     bufferLoader = new BufferLoader(
         context,
-        [
-            '../audio/MoDemJams.webm'
-        ],
+        runningAudioPrepareArray,
         runningAudioPrepare
     );
 
@@ -534,21 +927,31 @@ function runningAudioPrepare(bufferList) {
     runningAudio['source'].buffer = bufferList[0];
     runningAudio['gainControl'] = context.createGain();
     runningAudio['gainFilter'] = context.createGain();
+    runningAudio['gainCawControl'] = context.createGain();
     runningAudio['filter'] = filter;
+    runningAudio['bufferList'] = bufferList;
 
     runningAudio['source'].connect(runningAudio['filter']);
     runningAudio['filter'].connect(runningAudio['gainFilter']);
     runningAudio['gainFilter'].connect(context.destination);
     runningAudio['source'].connect(runningAudio['gainControl']);
     runningAudio['gainControl'].connect(context.destination);
+    runningAudio['gainCawControl'].connect(context.destination);
     runningAudio['gainFilter'].gain.value = 0;
     runningAudio['gainControl'].gain.value = 0;
 
+    for (var i = 0; i < 6; i++) {
+        runningAudio['caw' + i] = context.createBufferSource();
+        runningAudio['caw' + i].buffer = bufferList[i + 1];
+        runningAudio['caw' + i].connect(runningAudio['gainCawControl']);
+    }
+                                                                                // TODO set up sounds for spacebar eatings
     running(runningAudio);
 }
 
 function running (runningAudio) {
     showLine('Oh, it was running', 100, 1);
+    showLine('RUN', 50, 0, 0, 0, 'afterMessageInstructMiddle', 1, 1);
 
     var audioFadeIn = setInterval(function () {
       runningAudio['gainFilter'].gain.value += 0.05;
@@ -560,12 +963,13 @@ function running (runningAudio) {
     runningAudio['source'].start(0, 12);
 
     var caughtStatus = false;
-    var clickCounter = 0;
+    var clickCounter = 0, clickIncrement = 1;
     var extra = 10000;
     var policePosition = -1, birdPosition = [];
     var birdCounter = 0;
+    var clickInterval = 100
 
-    var windowRatio = ($(window).width() / ((1850 - 100 + extra) * 0.01));
+    var windowRatio = ($(window).width() / ((1850 - clickInterval + extra) * 0.01));
 
   setTimeout(function () {
     alternateClicks(0, 0, [
@@ -574,20 +978,29 @@ function running (runningAudio) {
                 runningAudio['gainControl'].gain.value = 1;
                 runningAudio['filter'].disconnect();
             }
-            clickCounter += 1;
-            currentPosition = (clickCounter - 1) * ($(window).width() / ((1850 - 100 + extra) * 0.01));
-            starredStep(clickCounter, 100, extra);
-            policePosition = policeman(clickCounter, 100, extra);               // occurs on certain numbers of clicks
-            birdInfo = bird(currentPosition, 100, extra, birdCounter, birdInfo);                      // occurs randomly
+            clickCounter += clickIncrement;
+            currentPosition = (clickCounter - 1) * ($(window).width() / ((1850 - clickInterval + extra) * 0.01));
+            starredStep(clickCounter, clickInterval, extra);
+            policePosition = policeman(clickCounter, clickInterval, extra);               // occurs on certain numbers of clicks
+            birdInfo = bird(currentPosition, clickInterval, extra, birdCounter, birdInfo, runningAudio);                      // occurs randomly
             birdCounter = birdInfo['birdCounter'];
 
             caughtStatus = checkPolicePosition(clickCounter, policePosition, extra);
+
+            if (birdInfo['eating'] === true) {
+                clickIncrement += 1;
+                starredStep(clickCounter, clickInterval, extra);
+                birdInfo['eating'] = false;
+                setTimeout(function () {
+                    clickIncrement = 1;
+                }, 1000);
+            }
         },
         function () {
             clickCounter += 1;
-            starredStep(clickCounter, 100, extra);
+            starredStep(clickCounter, clickInterval, extra);
 
-            caughtStatus = checkPolicePosition(clickCounter, policePosition, extra);
+            caughtStatus = checkPolicePosition(clickCounter, policePosition, extra, clickInterval);
         },
         function () {},
         function () {},
@@ -615,7 +1028,7 @@ function running (runningAudio) {
             caught(caughtStatus);
           }, 5000);
         }], function () {
-            return Boolean(policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01))) || (clickCounter > 115);
+            return Boolean(policePosition > clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01))) || (clickCounter > 115);
         });
   }, 1100);
 }
@@ -624,7 +1037,7 @@ function policeman (clickCounter, clickInterval, extra) {
     if (clickCounter === 1) {
         // insert audio hey freeze!
         policeIntervalCounter = 0;
-        showLine('FREEZE!', 50, 0, 1, 0, 'chaserSpeech');
+        showLine('FREEZE!', 50, 0, 1, 0, 'chaserSpeech', 1, 1);
         $('.chaserSpeech').css({
             'position'  :   'fixed',
             'left'      :   policeIntervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
@@ -640,7 +1053,7 @@ function policeman (clickCounter, clickInterval, extra) {
             starredStep(policeIntervalCounter, clickInterval, extra, '^', 5);
         }, 250);
     } else if (clickCounter === 15) {
-        showLine('BANG!', 50, 0, 1, 0, 'chaserSpeech');
+        showLine('BANG!', 50, 0, 1, 0, 'chaserSpeech', 1, 1);
         $('.chaserSpeech').css({
             'position'  :   'fixed',
             'left'      :   policeIntervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
@@ -653,22 +1066,20 @@ function policeman (clickCounter, clickInterval, extra) {
     return (policeIntervalCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)));
 }
 
-function checkPolicePosition (clickCounter, policePosition, extra) {
-    if ((policePosition > clickCounter * ($(window).width() / ((1850 - 100 + extra) * 0.01)) - ($(window).width() / ((1850 - 100 + extra) * 0.01)))) {
+function checkPolicePosition (clickCounter, policePosition, extra, clickInterval) {
+    if ((policePosition > clickCounter * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01)))) {
       return true;
   } else {
       return false;
   }
 }
 
-function bird(clickCounter, clickInterval, extra, birdCounter, birdInfo) {
-    if (Math.random() > 0.90) {
+function bird(clickCounter, clickInterval, extra, birdCounter, birdInfo, runningAudio) {
+    console.log(clickCounter);
+    if (Math.random() > (0.9 + 0.1 * (clickCounter / 1000))) {
         birdCounter += 1;
-        birdInfo = setBirdIntervals(birdCounter, clickInterval, extra, birdInfo, currentPosition);
+        birdInfo = setBirdIntervals(birdCounter, clickInterval, extra, birdInfo, currentPosition, runningAudio);
     }
-    // console.log(birdCounter);
-    // console.log(birdInfo);
-    // console.log(birdIntervalCounter);
     for (var i = 0; i < birdCounter; i++) {
         birdInfo['birdPosition'][i] = birdIntervalCounter[i] * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) - ($(window).width() / ((1850 - clickInterval + extra) * 0.01))
     }
@@ -676,38 +1087,45 @@ function bird(clickCounter, clickInterval, extra, birdCounter, birdInfo) {
     return birdInfo;
 }
 
-function setBirdIntervals(birdCounter, clickInterval, extra, birdInfo, clickCounter) {
+function setBirdIntervals(birdCounter, clickInterval, extra, birdInfo, clickCounter, runningAudio) {
     birdIntervalCounter[birdCounter] = 0;
 
     birdInterval[birdCounter] = setInterval(function () {
         birdIntervalCounter[birdCounter] += 1;
         buttonInstructDetector[birdCounter] = (buttonInstructDetector[birdCounter] === undefined ? false : buttonInstructDetector[birdCounter])
-        checkBirdPosition(clickCounter, birdInfo, 100, extra);
+        birdPosition[birdCounter] = birdIntervalCounter[birdCounter] * ($(window).width() / ((1850 - clickInterval + extra) * 0.01));
+        checkBirdPosition(clickCounter, birdInfo, clickInterval, extra);
+        birdAnimation(birdPosition[birdCounter], birdIntervalCounter[birdCounter], birdCounter);
     }, 250);
 
     cawInterval[birdCounter] = setInterval(function () {
-        showLine('[caw]', 50, 0, 1, 0, 'birdSpeech' + birdCounter);
+        var randomizer = Math.random();
+        showLine('[caw]', 50, 0, 1, 0, 'birdSpeech' + birdCounter, 1, 1);
         $('.birdSpeech' + birdCounter).css({
             'position'  :   'fixed',
-            'right'      :   birdIntervalCounter[birdCounter] * ($(window).width() / ((1850 - clickInterval + extra) * 0.01)) + 'px',
+            'right'      :   (birdPosition[birdCounter] + 100) + 'px',
             'top'       :   '70%',
             'font-size' :   '10px'
         }).animate({
             'opacity'   :   '0',
             'right'      :   '+=10%',
             'font-size' :   '+=10px'
-        }, 1500)
-        birdPosition[birdCounter] = birdIntervalCounter[birdCounter] * ($(window).width() / ((1850 - clickInterval + extra) * 0.01));
+        }, 1000 + randomizer * 1000);
         setTimeout(function () {
             clearScreen(0, ['.birdSpeech' + birdCounter], 0);
-        }, 1500);
+        }, 1000 + randomizer * 1000);
+        playCawSound(runningAudio);
     }, 2000)
+
+    var eating = false;
+
     return {
         birdInterval: birdInterval,
         cawInterval: cawInterval,
         birdIntervalCounter: birdIntervalCounter,
         birdPosition: birdPosition,
-        buttonInstructDetector: buttonInstructDetector
+        buttonInstructDetector: buttonInstructDetector,
+        eating: eating
     }
 }
 
@@ -715,35 +1133,82 @@ function checkBirdPosition (clickCounter, birdInfo, clickInterval, extra) {
     for (var i = 1; i < birdInfo['birdCounter'] + 1; i++) {
         if ((($(window).width() - birdInfo['birdPosition'][i]) < currentPosition + 250) && (birdInfo['buttonInstructDetector'][i] === false)) {
             birdInfo['buttonInstructDetector'][i] = true;
-            showLine('[spacebar]', 50, 0, 1, 0, 'buttonPressInstruct' + i);
+            showLine('[spacebar]', 50, 0, 1, 0, 'buttonPressInstruct' + i, 1, 1);
             $('.buttonPressInstruct' + i).css({
                 'position'  :   'fixed',
                 'right'      :   birdInfo['birdPosition'][i] + 'px',
                 'top'       :   '65%',
                 'font-size' :   '20px'
             }).animate({
-                'opacity'   :   '0',
+                'opacity'   :   '50',
                 'right'      :   '+=10%'
             }, 1500);
-
-            checkForSpacebarPress(clickInterval, i);
+            var currentBird = i;
+            checkForSpacebarPress(clickCounter, clickInterval, extra, currentBird);
         }
 
-        if (($(window).width() - birdInfo['birdPosition'][i]) < currentPosition - 250) {
+        if (($(window).width() - birdInfo['birdPosition'][i]) < currentPosition - 150) {            // cancel spacebar listener
+            clearScreen(0, ['.buttonPressInstruct' + i], 0);
+            $(document).off('keydown.bird' + i);
+        }
+        if ($(window).width() < birdInfo['birdPosition'][i] + 200) {
             clearInterval(cawInterval[i]);
             clearInterval(birdInterval[i]);
-            clearScreen(0, ['.buttonPressInstruct' + i], 0);
-            $(document).unbind('keydown.bird' + i);
         }
     }
 }
 
-function checkForSpacebarPress (clickInterval, i) {
-    $(document).bind('keydown.bird' + i, function (e) {
+function birdAnimation (birdPosition, birdIntervalCounter, birdCounter) {
+    if (birdIntervalCounter % 2 === 0) {
+        showLine('_/_', 0, 0, 1, 0, 'birdAnim' + birdCounter, 1, 1);
+        $('.birdAnim' + birdCounter).css({
+            'position'  :   'fixed',
+            'right'      :   birdPosition + 'px',
+            'top'       :   '70%',
+            'font-size' :   '20px'
+        });
+        setTimeout(function () {
+            clearScreen(0, ['.birdAnim' + birdCounter], 0);
+        }, 200);
+    } else {
+        showLine('-\\-', 0, 0, 1, 0, 'birdAnim' + birdCounter, 1, 1);
+        $('.birdAnim' + birdCounter).css({
+            'position'  :   'fixed',
+            'right'      :   birdPosition + 'px',
+            'top'       :   '70%',
+            'font-size' :   '20px'
+        });
+        setTimeout(function () {
+            clearScreen(0, ['.birdAnim' + birdCounter], 0);
+        }, 200);
+    }
+}
+
+function playCawSound (runningAudio) {
+    var i = Math.floor(Math.random() * 6);
+
+    runningAudio['caw' + i].start(0);
+
+    runningAudio['caw' + i] = context.createBufferSource();
+    runningAudio['caw' + i].buffer = runningAudio['bufferList'][i + 1];
+    runningAudio['caw' + i].connect(runningAudio['gainCawControl']);
+}
+
+function checkForSpacebarPress (clickCounter, clickInterval, extra, currentBird) {
+    $(document).on('keydown.bird' + currentBird, function (e) {
         if (e.which === 32) {
-            clearInterval(cawInterval[i]);
-            clearInterval(birdInterval[i]);
-            clearScreen(0, ['.buttonPressInstruct' + i], 0);
+            $(document).off('keydown.bird' + currentBird);
+            clearInterval(cawInterval[currentBird]);
+            clearInterval(birdInterval[currentBird]);
+            clearScreen(0, ['.buttonPressInstruct' + currentBird], 0);
+
+            birdInfo['eating'] = true;
+
+            // for (var i = 0; i < 4; i++) {
+            //     // console.log(clickCounter);
+            //     // clickCounter += 4;
+            //     // starredStep(clickCounter, clickInterval, extra);
+            // }
 
 
             // TODO implement speed boost properly
@@ -760,6 +1225,7 @@ function caught (caughtStatus) {
     });
     for (var i = 0; i < cawInterval.length; i++) {
         clearInterval(cawInterval[i]);
+        clearInterval(birdInterval[i]);
     }
     if (caughtStatus) {
         clearInterval(policeTimer);

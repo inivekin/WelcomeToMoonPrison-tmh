@@ -46,7 +46,7 @@ var revealByLetter = function (targetChild, stringWordArray, interval, i, string
 }, interval * stringLength);                                         // delays word
 };
 
-var revealByWord = function(targetChild, stringWordArray, interval, stringLength, count, byWord = 0, fadeLength = 0) {
+var revealByWord = function(targetChild, stringWordArray, interval, stringLength, count, fadeLength = 0, byWord = 0) {
   for (var i = 0; i < stringWordArray.length; i++) {
     if (!byWord) {
       revealByLetter(targetChild, stringWordArray, interval, i, stringLength, count, fadeLength);  // to continue to letter reveal
@@ -151,7 +151,7 @@ var showLine = function (stringLine, interval, check, skip, extra, newClass, fad
   newClassArray[count] = newClass;
   stringArray[count] = stringLine;
 
-  if (newClass !== 'openingText' && newClass !== 'openingText openingText1stLine') {
+  if (newClass !== 'openingText' && newClass !== 'openingText openingText1stLine' && byWord !== 1) {
      blathering(stringArray[count].length, interval, this.totalDelay, count, extra);
   }
 
