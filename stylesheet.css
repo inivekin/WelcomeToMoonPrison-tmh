@@ -70,8 +70,17 @@ h3 {
 }
 
 .afterMessageInstruct {
+    position: absolute;
     font-size: 58px;
-    margin-left: 10%;
+    left: 10%;
+    top: 70%;
+}
+
+.afterMessageInstructMiddle {
+    position: absolute;
+    font-size: 58px;
+    left: 10%;
+    top: 30%;
 }
 
 .selectable {
