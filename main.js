@@ -185,7 +185,7 @@ function switchOnClick (conditionArray, fadeTargetArray, messageArray, callToFun
       for (var j = 0; j < fadeTargetArray.length; j++) {
         $('#ansOp' + j).fadeTo(100, fadeTargetArray[i][j]);
         }
-        if(!(messageArray[i] === undefined)) {
+        if(messageArray[i] !== undefined) {
           if (messageArray[i] === 'finish') {
              callToFunction();
           } else {
