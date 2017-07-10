@@ -24,7 +24,7 @@ function scene1Question1 () {
 
     answerOptions(['SIT', 'STAND', 'THINK ABOUT WHAT YOU\'VE DONE'], ['WHY', 'WHY', 'OH GOD WHY']);
 
-    // TODO I will clean this up I swear. It just hurts for me to look at for too long of a period
+    // FIXME implement the checkOpacity command from main.js
     $('#ansDiv').on('mousedown.answering', '#ansOp0', function () {
       console.log('clicked sit');
     switchOnClick([$('#ansOp1').css('opacity') === '1' || $('#ansOp1').css('opacity') === '0.5',
