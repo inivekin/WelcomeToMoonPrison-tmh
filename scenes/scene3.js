@@ -57,23 +57,23 @@ function scene3Screen2 (relaxAudio) {
 
 function typeRelax (relaxAudio) {
   var letters = {};
+  var fallingLetters = [];
 
   letters = scene3TextToEnter('RELAX');
   var audioTimeCheck = setInterval(function () {
     if (context.currentTime > 12) {
       for (var i = 0; i < letters['letterArray'].length; i++) {
           console.log('Falling letter ' + i);
-
-          fallingLetter(letters, relaxAudio, i);
+          fallingLetters = fallingLetter(letters, relaxAudio, i);
       }
       clearInterval(audioTimeCheck);
     }
   }, 500)
 
-  $(document).on(click, function (event) {
-    checkLetterPos(event);
-  })
-  //blinkIndicator(typeIndicator);
+  checkLetterPos(letters, fallingLetters);
+
+  var typeIndicator = createTypeIndicator(letters);
+  blinkIndicator(typeIndicator);
 }
 
 function scene3TextToEnter(string) {
@@ -97,6 +97,18 @@ function scene3TextToEnter(string) {
   return {letterArray: letterArray, gap: gap};
 }
 
+function createTypeIndicator(letters) {
+  var typeIndicator = document.createElement('span');
+  $('body').append(typeIndicator);
+  $(typeIndicator).html('_').attr('class', 'anyText').css({
+    'top'      : '50%',
+    'left'     : letters['gap'] + '%',
+    'position' : 'absolute'
+  }).attr('id', 'typeIndicator');
+
+  return typeIndicator;
+}
+
 
 function blinkIndicator(typeIndicator) {
   var typeWaiting = setInterval(function () {
@@ -107,7 +119,7 @@ function blinkIndicator(typeIndicator) {
 
 function fallingLetter(letters, audio, i) {
   var fallingInterval = [];
-  console.log('Moving letter ' + i);
+  console.log ('Moving letter ' + i);
 
   setTimeout(function() {
     fallingInterval[i] = setInterval(function () {
@@ -123,8 +135,94 @@ function fallingLetter(letters, audio, i) {
         // At click or type check position and determine success
     }, 500);
   },1000 * i);
+
+  return fallingInterval; // FIXME is returned before intervals are set
 }
 
-function  checkLetterPos(event) {
+function checkLetterPos(letters, fallingLetters) {
   // TODO check top height of letter i, increment i, remember success
+  var incr = 0;
+
+  $(document).on('click keydown', function () {
+    var fallBelowCheck = $('#letter' + incr)[0].style.top > '40%';
+    var fallAboveCheck = $('#letter' + incr)[0].style.top < '55%';
+
+    console.log('Clicked');
+    console.log($('#letter' + incr)[0].style.top);
+    console.log(fallBelowCheck + ' ' + fallAboveCheck);
+
+    console.log(fallingLetters);
+
+    $('#typeIndicator').css({
+        'left' : '+=' + letters['gap'] + '%'
+    });
+
+    var letterClone = $('#letter' + incr).clone().appendTo('#txtDiv');
+    $(letterClone).attr('id','letter' + incr + 'Clone');
+
+    if (fallBelowCheck && fallAboveCheck) {
+      console.log('Passed fall check, affecting letter ' + incr);
+      clearInterval(fallingLetters[incr]);
+      $(letterClone).css({
+        'top'     : '50%',
+        'opacity' : '1'
+      });
+    } else {
+      $(letterClone).css({
+        'top'     : '50%',
+        'opacity' : '0'
+      });
+
+    }
+    if (incr === 4) {
+      $(document).off('click keydown');
+      $('#typeIndicator').remove();
+      scene3Breathing();
+    } else {
+    incr += 1;
+    }
+  });
+}
+
+function scene3Breathing () {
+  var letterPos = [];
+  var breathPos = [];
+  var breathingInterval = [];
+
+  for (var i = 0; i < 5; i++) {
+    letterPos[i] = $('#letter' + i + 'Clone')[0].style.paddingLeft;
+    breathPos[i] = parseFloat(letterPos[i]) - 50;
+    console.log($('#letter' + i + 'Clone')[0].style.paddingLeft)
+    console.log(letterPos);
+    console.log(breathPos);
+
+    breatheInOut(breathPos[i], i, breathingInterval);
+
+  }
+}
+
+function breatheInOut (breathPos, i, breathingInterval) {
+    breathingInterval[i] = setInterval(function () {
+      console.log('Checking time...');
+      if (context.currentTime > 25.2) {
+        breathingMotions(breathPos, i, 0);
+        breathingMotions(breathPos, i, 400);
+        clearInterval(breathingInterval[i]);
+      }
+    }, 100);
+
+}
+
+function breathingMotions (breathPos, i, timeout) {
+  setTimeout(function () {
+      $('#letter' + i + 'Clone').animate({
+        'left': '+=' + breathPos * 0.5 + '%'
+      }, 100);
+
+      setTimeout(function () {
+        $('#letter' + i + 'Clone').animate({
+          'left': '-=' + breathPos * 0.5 + '%'
+        }, 100);
+      },100);
+  }, timeout);
 }
