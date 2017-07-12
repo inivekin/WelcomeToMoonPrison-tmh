@@ -58,22 +58,50 @@ function scene3Screen2 (relaxAudio) {
 function typeRelax (relaxAudio) {
   var letters = {};
   var fallingLetters = [];
+  setTimeout(function () {
+    scene3Screen2Lines();
+  },3500);
 
   letters = scene3TextToEnter('RELAX');
+
+  letters['offset'] = context.currentTime;
+  console.log(letters);
+  console.log(letters['offset']);
+
   var audioTimeCheck = setInterval(function () {
-    if (context.currentTime > 12) {
+    console.log('OffsetTime: ' + (context.currentTime - letters['offset']));
+    if (context.currentTime - letters['offset'] > 9) {
+      console.log('OffsetTime: ' + (context.currentTime - letters['offset']));
       for (var i = 0; i < letters['letterArray'].length; i++) {
           console.log('Falling letter ' + i);
           fallingLetters = fallingLetter(letters, relaxAudio, i);
       }
+      checkLetterPos(letters, fallingLetters);
       clearInterval(audioTimeCheck);
     }
   }, 500)
 
-  checkLetterPos(letters, fallingLetters);
 
   var typeIndicator = createTypeIndicator(letters);
   blinkIndicator(typeIndicator);
+}
+
+function scene3Screen2Lines () {
+  showLine('Ok...', 50, 1, 0, 1500, '', 500, 0);
+  setTimeout(function () {
+    $('#msg0').fadeTo(500, 0);
+  }, 300);
+  showLine('Ok the first thing you gonna wanna do...', 50, 0, 0, 1500, '', 500, 0);
+  setTimeout(function () {
+    $('#msg1').fadeTo(500, 0);
+  }, 5500);
+  showLine('is', 50, 0, 0, 0, '', 500, 0);
+  setTimeout(function () {
+    $('#msg2').fadeTo(500, 0);
+  }, 6000);
+  setTimeout(function () {
+    clearScreen();
+  }, 6500);
 }
 
 function scene3TextToEnter(string) {
@@ -123,35 +151,84 @@ function fallingLetter(letters, audio, i) {
 
   setTimeout(function() {
     fallingInterval[i] = setInterval(function () {
-        console.log(context.currentTime);
+        console.log(context.currentTime - letters['offset']);
         $('#letter' + i).animate({
           'top'     : '+=10%',
           'opacity' : '-=0.1'
         }, 500, 'linear');
-      setTimeout(function () {
-        clearInterval(fallingInterval[i]);
-        $('#letter' + i).remove();
-      }, 5000);
         // At click or type check position and determine success
     }, 500);
+
+    setTimeout(function () {
+      clearInterval(fallingInterval[i]);
+      $('#letter' + i).remove();
+    }, 5000);
   },1000 * i);
 
-  return fallingInterval; // FIXME is returned before intervals are set
+
+  return fallingInterval;
 }
 
-function checkLetterPos(letters, fallingLetters) {
-  // TODO check top height of letter i, increment i, remember success
+function checkLetterPos(letters, fallingLetters, i) {
   var incr = 0;
+  var clickTimeout = [];
+  var incrTimeout = [];
+
+  for (i = 0; i < 5; i++) {
+    clickTimeout = clickTimer(i, letters, incr, clickTimeout);
+  }
+
+  incrTimeout[0] = setTimeout(function () {
+    incr = 1;
+  }, 4000);
+  incrTimeout[1] = setTimeout(function () {
+    incr = 2;
+  }, 4000 + 1000);
+  incrTimeout[2] = setTimeout(function () {
+    incr = 3;
+  }, 4000 + (1000 * 2));
+  incrTimeout[3] = setTimeout(function () {
+    incr = 4;
+  }, 4000 + (1000 * 3));
+
 
   $(document).on('click keydown', function () {
+    console.log(incr);
+    clearTimeout(clickTimeout[incr]);
+    clearTimeout(incrTimeout[incr]);
+    typedLetter(incr, letters, 1);
+    if (incr === 4) {
+      $(document).off('click keydown');
+      scene3Breathing(letters);
+    } else {
+      incr += 1;
+    }
+  });
+}
+
+function clickTimer (i, letters, incr, clickTimeout) {
+  clickTimeout[i] = setTimeout(function () {
+    typedLetter(i,letters,0);
+    if (i === 4) {
+      $(document).off('click keydown');
+      console.log('continuing');
+      scene3Breathing(letters);
+    }
+  }, 4000 + (1000 * i));
+
+  return clickTimeout;
+}
+
+function typedLetter (incr, letters, check) {
+  console.log(incr);
+  console.log($('#letter' + incr));
+  console.log($('#letter' + incr)[0].style.top);
     var fallBelowCheck = $('#letter' + incr)[0].style.top > '40%';
     var fallAboveCheck = $('#letter' + incr)[0].style.top < '55%';
 
     console.log('Clicked');
     console.log($('#letter' + incr)[0].style.top);
     console.log(fallBelowCheck + ' ' + fallAboveCheck);
-
-    console.log(fallingLetters);
 
     $('#typeIndicator').css({
         'left' : '+=' + letters['gap'] + '%'
@@ -160,9 +237,9 @@ function checkLetterPos(letters, fallingLetters) {
     var letterClone = $('#letter' + incr).clone().appendTo('#txtDiv');
     $(letterClone).attr('id','letter' + incr + 'Clone');
 
-    if (fallBelowCheck && fallAboveCheck) {
+    if (fallBelowCheck && fallAboveCheck && check) {
       console.log('Passed fall check, affecting letter ' + incr);
-      clearInterval(fallingLetters[incr]);
+      //clearInterval(fallingLetters[incr]);
       $(letterClone).css({
         'top'     : '50%',
         'opacity' : '1'
@@ -170,21 +247,15 @@ function checkLetterPos(letters, fallingLetters) {
     } else {
       $(letterClone).css({
         'top'     : '50%',
-        'opacity' : '0'
-      });
+        'opacity' : '1'
+      }).attr('class', 'anyTextInvert');
 
     }
-    if (incr === 4) {
-      $(document).off('click keydown');
-      $('#typeIndicator').remove();
-      scene3Breathing();
-    } else {
-    incr += 1;
-    }
-  });
 }
 
-function scene3Breathing () {
+function scene3Breathing (letters) {
+  $(document).off('click keydown');
+  $('#typeIndicator').remove();
   var letterPos = [];
   var breathPos = [];
   var breathingInterval = [];
@@ -196,18 +267,33 @@ function scene3Breathing () {
     console.log(letterPos);
     console.log(breathPos);
 
-    breatheInOut(breathPos[i], i, breathingInterval);
+    breatheInOut(breathPos[i], i, breathingInterval, letters);
 
   }
 }
 
-function breatheInOut (breathPos, i, breathingInterval) {
+function breatheInOut (breathPos, i, breathingInterval, letters) {
     breathingInterval[i] = setInterval(function () {
       console.log('Checking time...');
-      if (context.currentTime > 25.2) {
-        breathingMotions(breathPos, i, 0);
-        breathingMotions(breathPos, i, 400);
+      if (context.currentTime - letters['offset'] > 18) {
         clearInterval(breathingInterval[i]);
+        setTimeout(function () {
+          breathingMotions(breathPos, i, 0);
+          breathingMotions(breathPos, i, 400);
+          breathingMotions(breathPos, i, 1600);
+          breathingMotions(breathPos, i, 2000);
+          breathingMotions(breathPos, i, 3600);
+          breathingMotions(breathPos, i, 4000);
+          breathingMotions(breathPos, i, 5100);
+          breathingMotions(breathPos, i, 5500);
+          breathingMotions(breathPos, i, 7100);
+          breathingMotions(breathPos, i, 7500);
+          breathingMotions(breathPos, i, 8700);
+          breathingMotions(breathPos, i, 9100);
+          breathingMotions(breathPos, i, 10600);
+          breathingMotions(breathPos, i, 11000);
+          finalBreath(breathPos, i, 12600);
+        }, 2000);
       }
     }, 100);
 
@@ -216,13 +302,29 @@ function breatheInOut (breathPos, i, breathingInterval) {
 function breathingMotions (breathPos, i, timeout) {
   setTimeout(function () {
       $('#letter' + i + 'Clone').animate({
-        'left': '+=' + breathPos * 0.5 + '%'
+        'left': '+=' + breathPos * 0.3 + '%'
       }, 100);
 
       setTimeout(function () {
         $('#letter' + i + 'Clone').animate({
-          'left': '-=' + breathPos * 0.5 + '%'
+          'left': '-=' + breathPos * 0.3 + '%'
         }, 100);
       },100);
+  }, timeout);
+}
+
+function finalBreath (breathPos, j, timeout) {
+  setTimeout(function () {
+      $('#letter' + j + 'Clone').animate({
+        'left'    : '+=' + breathPos * 0.3 + '%',
+        'opacity' : '0'
+      }, 100);
+    if (j === 4) {
+      setTimeout(function () {
+        for (i=0; i < 5; i++) {
+          $('#letter' + i + 'Clone').remove();
+        }
+      }, 100);
+    }
   }, timeout);
 }
