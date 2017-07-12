@@ -5,6 +5,8 @@ var curLine = [];
 var screenBreakCheck = false;
 var context;
 var bufferLoader;                          // evil globals to be fixed
+var persistentAudio = {};
+
 
 /*
 screenPause parameter: time to pause before fadeTime - default 500
@@ -497,10 +499,86 @@ function loadScene (sceneScriptFile) {
     }, 500);
 }
 
-function gameStart () {
-    window.AudioContext = window.AudioContext || window.webkitAudioContext;
-    context = new AudioContext();
+function loadScene0 () {
+  $('#ansDiv').off('mousedown.answering');
   loadScene('/scenes/opening.js');
+  clearScreen(0, ['.msg', '.selectable'], 0);
+}
+function loadScene1() {
+  $('#ansDiv').off('mousedown.answering');
+  loadScene('/scenes/scene1.js');
+  clearScreen(0, ['.msg', '.selectable'], 0);
+}
+
+function loadScene2() {
+  $('#ansDiv').off('mousedown.answering');
+  loadScene('/scenes/scene2.js');
+  clearScreen(0, ['.msg', '.selectable'], 0);
+}
+
+function loadScene3() {
+  $('#ansDiv').off('mousedown.answering');
+  loadScene('/scenes/scene3.js');
+  clearScreen(0, ['.msg', '.selectable'], 0);
+}
+
+function loadScene4() {
+  $('#ansDiv').off('mousedown.answering');
+  loadScene('/scenes/scene4.js');
+  clearScreen(0, ['.msg', '.selectable'], 0);
+}
+
+function loadScene5() {
+  $('#ansDiv').off('mousedown.answering');
+  loadScene('/scenes/scene5.js');
+  clearScreen(0, ['.msg', '.selectable'], 0);
+}
+
+function openingAudio() {
+    bufferLoader = new BufferLoader(
+        context,
+        [
+            '../audio/blathermouth1.mp3',
+            '../audio/blathermouth2.mp3',
+            '../audio/blathermouth3.mp3'
+        ],
+        sceneSelector
+    );
+
+    bufferLoader.load();
+}
+
+function sceneSelector (bufferList) {
+  showLine('SELECT A SCENE', 50, 1);
+  answerOptions(['OPENING', 'SCENE 1', 'SCENE 2', 'SCENE 3', 'SCENE 4', 'SCENE 5'],['DONE-ISH', 'IN PROG', 'IN PROG', 'IN PROG', 'TBD', 'TBD']);
+  $('#ansDiv').on('mousedown.answering', '#ansOp0', function () {
+    switchOnClick([$('#ansOp0').css('opacity') === '1'], [[0,1,1,1,1,1]], ['finish'], loadScene0);
+  });
+  $('#ansDiv').on('mousedown.answering', '#ansOp1', function () {
+    switchOnClick([$('#ansOp1').css('opacity') === '1'], [[1,0,1,1,1,1]], ['finish'], loadScene1);
+  });
+  $('#ansDiv').on('mousedown.answering', '#ansOp2', function () {
+    switchOnClick([$('#ansOp2').css('opacity') === '1'], [[1,1,0,1,1,1]], ['finish'], loadScene2);
+  });
+  $('#ansDiv').on('mousedown.answering', '#ansOp3', function () {
+    switchOnClick([$('#ansOp3').css('opacity') === '1'], [[1,1,1,0,1,1]], ['finish'], loadScene3);
+  });
+  $('#ansDiv').on('mousedown.answering', '#ansOp4', function () {
+    switchOnClick([$('#ansOp4').css('opacity') === '1'], [[1,1,1,1,0,1]], ['NOT YET, TRY ANOTHER']);
+  });
+  $('#ansDiv').on('mousedown.answering', '#ansOp5', function () {
+    switchOnClick([$('#ansOp5').css('opacity') === '1'], [[1,1,1,1,1,0]], ['OPTIMISTIC... TRY ANOTHER']);
+  });
+
+  persistentAudio['bufferList'] = bufferList;
+
+}
+
+function gameStart () {
+  window.AudioContext = window.AudioContext || window.webkitAudioContext;
+  context = new AudioContext();
+
+  openingAudio();
 }
 
 window.onload = gameStart;

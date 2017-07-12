@@ -1,32 +1,32 @@
 $(document).ready(function () {
-    openingAudio();
+    //openingAudio();
+  firstScreen();
 });
 
-var persistentAudio = {};
+//var persistentAudio = {};
 
-function openingAudio() {
-    bufferLoader = new BufferLoader(
-        context,
-        [
-            '../audio/blathermouth1.mp3',
-            '../audio/blathermouth2.mp3',
-            '../audio/blathermouth3.mp3'
-        ],
-        firstScreen
-    );
+//function openingAudio() {
+    //bufferLoader = new BufferLoader(
+        //context,
+        //[
+            //'../audio/blathermouth1.mp3',
+            //'../audio/blathermouth2.mp3',
+            //'../audio/blathermouth3.mp3'
+        //],
+        //firstScreen
+    //);
 
-    bufferLoader.load();
-}
+    //bufferLoader.load();
+//}
 
-function firstScreen(bufferList) {
+function firstScreen() {
 
-    console.log('bufferloaded');
     addAudio('shiryu8', './audio/Shiryu8.ogg');
     $('#shiryu8').get(0).volume = 0.75;
     $('#shiryu8').on('canplay', function () {
         playAudio('shiryu8');
 
-        persistentAudio['bufferList'] = bufferList;
+        //persistentAudio['bufferList'] = bufferList;
 
         showLine('YOU\'VE DONE A TERRIBLE THING YOU CAN\'T REMEMBER.', 50, true, false, 750, 'openingText openingText1stLine');
         showLine('SOMETHING JUST TERRIBLY AWFUL.', 50, 0, 0, undefined, 'openingText');
