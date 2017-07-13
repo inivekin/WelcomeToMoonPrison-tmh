@@ -1,5 +1,5 @@
 $(document).ready(function () {
-  relaxAudioLoad()
+  relaxAudioLoad();
     //scene3Screen1();
 });
 
