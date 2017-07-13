@@ -38,6 +38,12 @@ h3 {
   text-shadow: 4px 4px 4px #BF16B6;
 }
 
+.anyTextInvert {
+  font-family: Gaiatype;
+  color: #BF16B6;
+  text-shadow: 4px 4px 4px white;
+}
+
 #bigOldTitle {
   position: fixed;
   white-space: nowrap;                /* remove this and the three lines after to fix word wrapping */
