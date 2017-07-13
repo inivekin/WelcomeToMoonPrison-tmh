@@ -189,7 +189,7 @@ function switchOnClick (conditionArray, fadeTargetArray, messageArray, callToFun
         }
         if(messageArray[i] !== undefined) {
           if (messageArray[i] === 'finish') {
-             callToFunction();
+             callToFunction(arguments[4]);
           } else {
               showLine(messageArray[i], 25, 0, 1, undefined, 'responses');
              if(($('#txtDiv p').length > 4)) {

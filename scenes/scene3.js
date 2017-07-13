@@ -1,8 +1,9 @@
 $(document).ready(function () {
-    scene3Screen1();
+  relaxAudioLoad();
+    //scene3Screen1();
 });
 
-function scene3Screen1() {
+function scene3Screen1(relaxAudio) {
   showLine('Welcome back to your cell.', 50, 1);
   showLine('You\'ve been out for a while.', 50);
   showLine('You should try to R E L A X .', 50);
@@ -16,12 +17,14 @@ function scene3Screen1() {
     switchOnClick([$('#ansOp1').css('opacity') === '1'], [[1, 0, 1]],['You are already standing. You can\'t stand and relax, obviously.'] );
                           });
   $('#ansDiv').on('mousedown.answering', '#ansOp2', function () {
-    switchOnClick([$('#ansOp1').css('opacity') === '1' && $('#ansOp0').css('opacity') === '0'], [[0, 0, 0]], ['finish'], relaxAudioLoad);
+    switchOnClick([$('#ansOp1').css('opacity') === '1' && $('#ansOp0').css('opacity') === '0'], [[0, 0, 0]], ['finish'], scene3Screen2, relaxAudio);
                           });
 }
 
 function relaxAudioLoad() {
   console.log('Loading audio...');
+
+
   var bufferLoader = new BufferLoader(
       context,
       [
@@ -42,11 +45,12 @@ function relaxAudioPrepare(bufferList) {
 
   relaxAudio['source'].connect(context.destination);
 
-  scene3Screen2(relaxAudio);
+  scene3Screen1(relaxAudio);
 }
 
 function scene3Screen2 (relaxAudio) {
   console.log('Beginning Screen2...');
+
   $('#ansDiv').off('.answering');
   clearScreen(0, ['.selectable', '.msg'], 200);
 
