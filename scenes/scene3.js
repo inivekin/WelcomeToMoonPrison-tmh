@@ -66,7 +66,7 @@ function typeRelax (relaxAudio) {
     scene3Screen2Lines();
   },3500);
 
-  letters = scene3TextToEnter('RELAX');
+  letters = scene3TextToEnter('RELAX', 'top', 'padding-left');
 
   letters['offset'] = context.currentTime;
   console.log(letters);
@@ -78,9 +78,9 @@ function typeRelax (relaxAudio) {
       console.log('OffsetTime: ' + (context.currentTime - letters['offset']));
       for (var i = 0; i < letters['letterArray'].length; i++) {
           console.log('Falling letter ' + i);
-          fallingLetters = fallingLetter(letters, relaxAudio, i);
+          fallingLetters = fallingLetter(letters, i);
       }
-      checkLetterPos(letters, fallingLetters);
+      checkLetterPos(letters, fallingLetters, scene3Breathing);
       clearInterval(audioTimeCheck);
     }
   }, 500)
@@ -108,35 +108,62 @@ function scene3Screen2Lines () {
   }, 6500);
 }
 
-function scene3TextToEnter(string) {
+function scene3TextToEnter(string, from, orientation, dist=50) {
   var gap = 100 / (string.length + 1);
   var letterArray =[];
+  var letterProp = {};
+
+  letterProp[from] = '-5%';
+  letterProp['opacity'] = '1';
+  letterProp['position'] = 'absolute';
 
   for (var i = 0; i < string.length; i++) {
     var letter = document.createElement('span');
-    $('#txtDiv').append(letter);
+    if (from == 'top' | from == 'bottom') {
+      letterProp[orientation] = gap * (i + 1) + 'vw';
+    } else {
+      letterProp[orientation] = gap * (i + 1) + 'vh';
+    }
+    $('#wrapper').append(letter);
     $(letter).attr('id', 'letter' + i).attr('class', 'anyText falling');
-    $(letter).css({
-      'padding-left' : gap * (i + 1) + '%',
-      'top'          : '-5%',
-      'opacity'      : '1',
-      'position'     : 'absolute'
-    });
+    //$(letter).css({
+      //'padding-left' : gap * (i + 1) + '%',
+      //'top'          : '-5%',
+      //'opacity'      : '1',
+      //'position'     : 'absolute'
+    //});
+    $(letter).css(letterProp);
     $(letter).html(string[i]);
 
     letterArray[i] = letter;
   }
-  return {letterArray: letterArray, gap: gap};
+  return {letterArray: letterArray, gap: gap, from: from, orientation: orientation, dist: dist};
 }
 
 function createTypeIndicator(letters) {
   var typeIndicator = document.createElement('span');
-  $('body').append(typeIndicator);
-  $(typeIndicator).html('_').attr('class', 'anyText').css({
-    'top'      : '50%',
-    'left'     : letters['gap'] + '%',
-    'position' : 'absolute'
-  }).attr('id', 'typeIndicator');
+  var or, nor;
+
+  $('#txtDiv').append(typeIndicator);
+  if(letters['orientation'] == 'padding-top' || letters['orientation'] == 'padding-bottom') {
+    or = 'vh';
+    nor = 'vw';
+  } else {
+    or = 'vw';
+    nor = 'vh';
+  }
+
+  var typeIndProp = {};
+
+  typeIndProp[letters['from']] = letters['dist'] + nor;
+  typeIndProp[letters['orientation']] = letters['gap'] + or;
+  typeIndProp['position'] = 'absolute';
+  $(typeIndicator).html('_').attr('class', 'anyText').css(typeIndProp).attr('id', 'typeIndicator');
+  //$(typeIndicator).html('_').attr('class', 'anyText').css({
+    //'top'      : '50%',
+    //'left'     : letters['gap'] + or,
+    //'position' : 'absolute'
+  //}).attr('id', 'typeIndicator');
 
   return typeIndicator;
 }
@@ -149,51 +176,74 @@ function blinkIndicator(typeIndicator) {
 }
 
 
-function fallingLetter(letters, audio, i) {
+function fallingLetter(letters, i, speed=10) {
   var fallingInterval = [];
   console.log ('Moving letter ' + i);
+  letters['speed'] = speed;
+
+  var letterAnimProp = {}
+
+  if(letters['orientation'] == 'padding-top' || letters['orientation'] == 'padding-bottom') {
+    or = 'vh';
+    nor = 'vw';
+  } else {
+    or = 'vw';
+    nor = 'vh';
+  }
+
+  letterAnimProp[letters['from']] = '+=' + speed + nor;
+  letterAnimProp['opacity'] = '-=' + speed /100;
 
   setTimeout(function() {
     fallingInterval[i] = setInterval(function () {
-        console.log(context.currentTime - letters['offset']);
-        $('#letter' + i).animate({
-          'top'     : '+=10%',
-          'opacity' : '-=0.1'
-        }, 500, 'linear');
-        // At click or type check position and determine success
+      $('#letter' + i).animate(letterAnimProp, 500, 'linear');
+        //$('#letter' + i).animate({
+          //from            : '+='+ speed + '%',
+          //'opacity'       : '-=' + speed / 100
+        //}, 500, 'linear');
     }, 500);
 
     setTimeout(function () {
       clearInterval(fallingInterval[i]);
       $('#letter' + i).remove();
-    }, 5000);
-  },1000 * i);
+    }, (100 / speed) * 500);
+  },(10000 / speed) * i / (letters['dist']/50));
 
 
   return fallingInterval;
 }
 
-function checkLetterPos(letters, fallingLetters, i) {
+function checkLetterPos(letters, fallingLetters, callToFunc) {
   var incr = 0;
   var clickTimeout = [];
   var incrTimeout = [];
 
-  for (i = 0; i < 5; i++) {
-    clickTimeout = clickTimer(i, letters, incr, clickTimeout);
+  for (i = 0; i < letters['letterArray'].length; i++) {
+    clickTimeout = clickTimer(i, letters, incr, clickTimeout, callToFunc);
+  }
+  for (var j = 0; j < letters['letterArray'].length; j++) {
+    incrTimeout[j] = setTimeout(function (x) {
+      return function () {
+        incr = x + 1;
+      }
+      console.log('Timeout, incrementing...');
+      console.log(letters['speed']);
+      console.log('Next occurence at: ' + ((100 / letters['speed']) * 500 - 1000(letters['dist']/50) + (10000 / letters['speed']) * x));
+    }(j), (100 / letters['speed']) * 500 - 1000/(letters['dist']/50) + (10000 / letters['speed']) * j);
   }
 
-  incrTimeout[0] = setTimeout(function () {
-    incr = 1;
-  }, 4000);
-  incrTimeout[1] = setTimeout(function () {
-    incr = 2;
-  }, 4000 + 1000);
-  incrTimeout[2] = setTimeout(function () {
-    incr = 3;
-  }, 4000 + (1000 * 2));
-  incrTimeout[3] = setTimeout(function () {
-    incr = 4;
-  }, 4000 + (1000 * 3));
+  //incrTimeout[0] = setTimeout(function () {
+    //incr = 1;
+  //}, (100 / letters['speed']) * 500);
+  //incrTimeout[1] = setTimeout(function () {
+    //incr = 2;
+  //}, 4000 + 1000);
+  //incrTimeout[2] = setTimeout(function () {
+    //incr = 3;
+  //}, 4000 + (1000 * 2));
+  //incrTimeout[3] = setTimeout(function () {
+    //incr = 4;
+  //}, 4000 + (1000 * 3));
 
 
   $(document).on('click keydown', function () {
@@ -201,24 +251,25 @@ function checkLetterPos(letters, fallingLetters, i) {
     clearTimeout(clickTimeout[incr]);
     clearTimeout(incrTimeout[incr]);
     typedLetter(incr, letters, 1);
-    if (incr === 4) {
+    if (incr === letters['letterArray'].length - 1) {
       $(document).off('click keydown');
-      scene3Breathing(letters);
+      callToFunc(letters);
     } else {
       incr += 1;
     }
   });
 }
 
-function clickTimer (i, letters, incr, clickTimeout) {
+
+function clickTimer (i, letters, incr, clickTimeout, callToFunc) {
   clickTimeout[i] = setTimeout(function () {
     typedLetter(i,letters,0);
-    if (i === 4) {
+    if (i === letters['letterArray'].length - 1) {
       $(document).off('click keydown');
       console.log('continuing');
-      scene3Breathing(letters);
+      callToFunc(letters);
     }
-  }, 4000 + (1000 * i));
+  }, (100 / letters['speed']) * 500 - 1000/(letters['dist']/50) + (10000 / letters['speed']) * i);
 
   return clickTimeout;
 }
@@ -226,17 +277,36 @@ function clickTimer (i, letters, incr, clickTimeout) {
 function typedLetter (incr, letters, check) {
   console.log(incr);
   console.log($('#letter' + incr));
-  console.log($('#letter' + incr)[0].style.top);
-    var fallBelowCheck = $('#letter' + incr)[0].style.top > '40%';
-    var fallAboveCheck = $('#letter' + incr)[0].style.top < '55%';
+  //var fallBelowCheck = $('#letter' + incr)[0].style.top > '40%';
+  //var fallAboveCheck = $('#letter' + incr)[0].style.top < '55%';
+  var maxDiff = letters['dist'] * 0.01 - 0.1;
+  var minDiff = letters['dist'] * 0.01 + 0.1;
 
-    console.log('Clicked');
-    console.log($('#letter' + incr)[0].style.top);
-    console.log(fallBelowCheck + ' ' + fallAboveCheck);
+  if (letters['from'] == 'top' || letters['bottom']) {
+    var fallBelowCheck = parseFloat($('#letter' + incr).css(letters['from'])) > maxDiff * $(window).height();
+    var fallAboveCheck = parseFloat($('#letter' + incr).css(letters['from'])) < minDiff * $(window).height();
+    var or = 'vh';
+    var nor = 'vw';
+  } else {
+    var fallBelowCheck = parseFloat($('#letter' + incr).css(letters['from'])) > maxDiff * $(window).width();
+    var fallAboveCheck = parseFloat($('#letter' + incr).css(letters['from'])) < minDiff * $(window).width();
+    var or = 'vw';
+    var nor = 'vh';
+  }
 
-    $('#typeIndicator').css({
-        'left' : '+=' + letters['gap'] + '%'
-    });
+  console.log(parseFloat($('#letter' + incr).css(letters['from'])) + ', ' + $(window).width() * maxDiff + ', ' + $(window).width() * minDiff);
+  console.log(parseFloat($('#letter' + incr).css(letters['from'])) > $(window).width() * maxDiff);
+  console.log(parseFloat($('#letter' + incr).css(letters['from'])) < $(window).width() * minDiff);
+
+  console.log('Clicked: ' + check);
+  //console.log($('#letter' + incr)[0].style.top);
+  console.log(fallBelowCheck + ' ' + fallAboveCheck);
+  var indicatorProp = {}
+  indicatorProp[letters['orientation']] = '+=' + letters['gap'] + nor;
+  $('#typeIndicator').css(indicatorProp);
+    //$('#typeIndicator').css({
+        //'left' : '+=' + letters['gap'] + '%'
+    //});
 
     var letterClone = $('#letter' + incr).clone().appendTo('#txtDiv');
     $(letterClone).attr('id','letter' + incr + 'Clone');
@@ -244,20 +314,21 @@ function typedLetter (incr, letters, check) {
     if (fallBelowCheck && fallAboveCheck && check) {
       console.log('Passed fall check, affecting letter ' + incr);
       //clearInterval(fallingLetters[incr]);
-      $(letterClone).css({
-        'top'     : '50%',
-        'opacity' : '1'
-      });
+      $(letterClone).css(letters['from'], letters['dist'] + or).css('opacity', '1');
+      //$(letterClone).css({
+        //'top'     : '50%',
+        //'opacity' : '1'
+      //});
     } else {
-      $(letterClone).css({
-        'top'     : '50%',
-        'opacity' : '1'
-      }).attr('class', 'anyTextInvert');
-
+      $(letterClone).css(letters['from'], letters['dist'] + or).css('opacity', '1').attr('class', 'anyTextInvert');
+      //$(letterClone).css({
+        //'top'     : '50%',
+        //'opacity' : '1'
+      //}).attr('class', 'anyTextInvert');
     }
 }
 
-function scene3Breathing (letters) {
+function scene3Breathing(letters) {
   $(document).off('click keydown');
   $('#typeIndicator').remove();
   var letterPos = [];
@@ -279,7 +350,7 @@ function scene3Breathing (letters) {
 function breatheInOut (breathPos, i, breathingInterval, letters) {
     breathingInterval[i] = setInterval(function () {
       console.log('Checking time...');
-      if (context.currentTime - letters['offset'] > 18) {
+      if (context.currentTime - letters['offset'] > 17) {
         clearInterval(breathingInterval[i]);
         setTimeout(function () {
           breathingMotions(breathPos, i, 0);
@@ -297,7 +368,7 @@ function breatheInOut (breathPos, i, breathingInterval, letters) {
           breathingMotions(breathPos, i, 10600);
           breathingMotions(breathPos, i, 11000);
           finalBreath(breathPos, i, 12600);
-        }, 2000);
+        }, 3000);
       }
     }, 100);
 
@@ -328,7 +399,26 @@ function finalBreath (breathPos, j, timeout) {
         for (i=0; i < 5; i++) {
           $('#letter' + i + 'Clone').remove();
         }
+        relaxHere();
       }, 100);
     }
   }, timeout);
+}
+
+function relaxHere() {
+  var letters = {};
+  var fallingLetters = [];
+  letters = scene3TextToEnter('HERE', 'right', 'padding-top', 70);
+  for (var i = 0; i < letters['letterArray'].length; i++) {
+      console.log('Falling letter ' + i);
+      fallingLetters = fallingLetter(letters, i, 10);
+  }
+  checkLetterPos(letters, fallingLetters, relaxNow);
+  var typeIndicator = createTypeIndicator(letters);
+  blinkIndicator(typeIndicator);
+}
+
+function relaxNow() {
+  $('#typeIndicator').remove();
+  console.log('R E L A X NOW');
 }
