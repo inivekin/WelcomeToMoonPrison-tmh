@@ -78,9 +78,9 @@ function typeRelax (relaxAudio) {
       console.log('OffsetTime: ' + (context.currentTime - letters['offset']));
       for (var i = 0; i < letters['letterArray'].length; i++) {
           console.log('Falling letter ' + i);
-          fallingLetters = fallingLetter(letters, i);
+          fallingLetter(letters, i);
       }
-      checkLetterPos(letters, fallingLetters, scene3Breathing);
+      checkLetterPos(letters, scene3Breathing);
       clearInterval(audioTimeCheck);
     }
   }, 500)
@@ -113,7 +113,7 @@ function scene3TextToEnter(string, from, orientation, dist=50) {
   var letterArray =[];
   var letterProp = {};
 
-  letterProp[from] = '-5%';
+  letterProp[from] = '-2%';
   letterProp['opacity'] = '1';
   letterProp['position'] = 'absolute';
 
@@ -126,12 +126,6 @@ function scene3TextToEnter(string, from, orientation, dist=50) {
     }
     $('#wrapper').append(letter);
     $(letter).attr('id', 'letter' + i).attr('class', 'anyText falling');
-    //$(letter).css({
-      //'padding-left' : gap * (i + 1) + '%',
-      //'top'          : '-5%',
-      //'opacity'      : '1',
-      //'position'     : 'absolute'
-    //});
     $(letter).css(letterProp);
     $(letter).html(string[i]);
 
@@ -159,11 +153,6 @@ function createTypeIndicator(letters) {
   typeIndProp[letters['orientation']] = letters['gap'] + or;
   typeIndProp['position'] = 'absolute';
   $(typeIndicator).html('_').attr('class', 'anyText').css(typeIndProp).attr('id', 'typeIndicator');
-  //$(typeIndicator).html('_').attr('class', 'anyText').css({
-    //'top'      : '50%',
-    //'left'     : letters['gap'] + or,
-    //'position' : 'absolute'
-  //}).attr('id', 'typeIndicator');
 
   return typeIndicator;
 }
@@ -178,7 +167,6 @@ function blinkIndicator(typeIndicator) {
 
 function fallingLetter(letters, i, speed=10) {
   var fallingInterval = [];
-  console.log ('Moving letter ' + i);
   letters['speed'] = speed;
 
   var letterAnimProp = {}
@@ -193,61 +181,39 @@ function fallingLetter(letters, i, speed=10) {
 
   letterAnimProp[letters['from']] = '+=' + speed + nor;
   letterAnimProp['opacity'] = '-=' + speed /100;
+  //letterAnimProp[letters['from']] = '=' + '100' + nor;
+  //letterAnimProp['opacity'] = '=' + 0;
 
+  // TODO try out one .animate instead of recurring anims?
   setTimeout(function() {
     fallingInterval[i] = setInterval(function () {
       $('#letter' + i).animate(letterAnimProp, 500, 'linear');
-        //$('#letter' + i).animate({
-          //from            : '+='+ speed + '%',
-          //'opacity'       : '-=' + speed / 100
-        //}, 500, 'linear');
     }, 500);
 
     setTimeout(function () {
       clearInterval(fallingInterval[i]);
       $('#letter' + i).remove();
-    }, (100 / speed) * 500);
-  },(10000 / speed) * i / (letters['dist']/50));
-
-
-  return fallingInterval;
+    }, (100 / speed + 1) * 500);
+  },(10000 / speed) * i);
 }
 
-function checkLetterPos(letters, fallingLetters, callToFunc) {
+function checkLetterPos(letters, callToFunc) {
   var incr = 0;
   var clickTimeout = [];
   var incrTimeout = [];
 
   for (i = 0; i < letters['letterArray'].length; i++) {
-    clickTimeout = clickTimer(i, letters, incr, clickTimeout, callToFunc);
+    clickTimeout[i] = clickTimer(i, letters, callToFunc);
   }
   for (var j = 0; j < letters['letterArray'].length; j++) {
     incrTimeout[j] = setTimeout(function (x) {
       return function () {
         incr = x + 1;
       }
-      console.log('Timeout, incrementing...');
-      console.log(letters['speed']);
-      console.log('Next occurence at: ' + ((100 / letters['speed']) * 500 - 1000(letters['dist']/50) + (10000 / letters['speed']) * x));
-    }(j), (100 / letters['speed']) * 500 - 1000/(letters['dist']/50) + (10000 / letters['speed']) * j);
+    }(j), (letters['dist'] / letters['speed']) * 500 + 200 * (5 - (50 - letters['dist'])/letters['speed']) + (10000 / letters['speed']) * j );
   }
 
-  //incrTimeout[0] = setTimeout(function () {
-    //incr = 1;
-  //}, (100 / letters['speed']) * 500);
-  //incrTimeout[1] = setTimeout(function () {
-    //incr = 2;
-  //}, 4000 + 1000);
-  //incrTimeout[2] = setTimeout(function () {
-    //incr = 3;
-  //}, 4000 + (1000 * 2));
-  //incrTimeout[3] = setTimeout(function () {
-    //incr = 4;
-  //}, 4000 + (1000 * 3));
-
-
   $(document).on('click keydown', function () {
-    console.log(incr);
     clearTimeout(clickTimeout[incr]);
     clearTimeout(incrTimeout[incr]);
     typedLetter(incr, letters, 1);
@@ -261,28 +227,23 @@ function checkLetterPos(letters, fallingLetters, callToFunc) {
 }
 
 
-function clickTimer (i, letters, incr, clickTimeout, callToFunc) {
-  clickTimeout[i] = setTimeout(function () {
+function clickTimer(i, letters, callToFunc) {
+  var clickTimeoutRun = setTimeout(function () {
     typedLetter(i,letters,0);
     if (i === letters['letterArray'].length - 1) {
       $(document).off('click keydown');
       console.log('continuing');
       callToFunc(letters);
     }
-  }, (100 / letters['speed']) * 500 - 1000/(letters['dist']/50) + (10000 / letters['speed']) * i);
-
-  return clickTimeout;
+  }, (letters['dist'] / letters['speed']) * 500 + 200 * (5 - (50 - letters['dist'])/letters['speed']) + (10000 / letters['speed']) * i );
+  return clickTimeoutRun;
 }
 
 function typedLetter (incr, letters, check) {
-  console.log(incr);
-  console.log($('#letter' + incr));
-  //var fallBelowCheck = $('#letter' + incr)[0].style.top > '40%';
-  //var fallAboveCheck = $('#letter' + incr)[0].style.top < '55%';
   var maxDiff = letters['dist'] * 0.01 - 0.1;
   var minDiff = letters['dist'] * 0.01 + 0.1;
 
-  if (letters['from'] == 'top' || letters['bottom']) {
+  if (letters['from'] == 'top' || letters['from'] == 'bottom') {
     var fallBelowCheck = parseFloat($('#letter' + incr).css(letters['from'])) > maxDiff * $(window).height();
     var fallAboveCheck = parseFloat($('#letter' + incr).css(letters['from'])) < minDiff * $(window).height();
     var or = 'vh';
@@ -294,37 +255,22 @@ function typedLetter (incr, letters, check) {
     var nor = 'vh';
   }
 
-  console.log(parseFloat($('#letter' + incr).css(letters['from'])) + ', ' + $(window).width() * maxDiff + ', ' + $(window).width() * minDiff);
-  console.log(parseFloat($('#letter' + incr).css(letters['from'])) > $(window).width() * maxDiff);
-  console.log(parseFloat($('#letter' + incr).css(letters['from'])) < $(window).width() * minDiff);
-
   console.log('Clicked: ' + check);
-  //console.log($('#letter' + incr)[0].style.top);
   console.log(fallBelowCheck + ' ' + fallAboveCheck);
+
   var indicatorProp = {}
   indicatorProp[letters['orientation']] = '+=' + letters['gap'] + nor;
   $('#typeIndicator').css(indicatorProp);
-    //$('#typeIndicator').css({
-        //'left' : '+=' + letters['gap'] + '%'
-    //});
 
+// TODO id repeating themselves is a problem (especially #letter i Clones)
     var letterClone = $('#letter' + incr).clone().appendTo('#txtDiv');
     $(letterClone).attr('id','letter' + incr + 'Clone');
 
     if (fallBelowCheck && fallAboveCheck && check) {
       console.log('Passed fall check, affecting letter ' + incr);
-      //clearInterval(fallingLetters[incr]);
       $(letterClone).css(letters['from'], letters['dist'] + or).css('opacity', '1');
-      //$(letterClone).css({
-        //'top'     : '50%',
-        //'opacity' : '1'
-      //});
     } else {
       $(letterClone).css(letters['from'], letters['dist'] + or).css('opacity', '1').attr('class', 'anyTextInvert');
-      //$(letterClone).css({
-        //'top'     : '50%',
-        //'opacity' : '1'
-      //}).attr('class', 'anyTextInvert');
     }
 }
 
@@ -406,19 +352,48 @@ function finalBreath (breathPos, j, timeout) {
 }
 
 function relaxHere() {
+// FIXME timeout is a bit weird on horizontals, seems to be getting less and less? Likely related to speed parameter
   var letters = {};
   var fallingLetters = [];
   letters = scene3TextToEnter('HERE', 'right', 'padding-top', 70);
   for (var i = 0; i < letters['letterArray'].length; i++) {
       console.log('Falling letter ' + i);
-      fallingLetters = fallingLetter(letters, i, 10);
+      fallingLetter(letters, i, 15);
   }
-  checkLetterPos(letters, fallingLetters, relaxNow);
+  checkLetterPos(letters, relaxNow);
   var typeIndicator = createTypeIndicator(letters);
   blinkIndicator(typeIndicator);
 }
 
 function relaxNow() {
   $('#typeIndicator').remove();
-  console.log('R E L A X NOW');
+  var letters = {};
+  var fallingLetters = [];
+  letters = scene3TextToEnter('NOW', 'left', 'padding-top', 70);
+  for (var i = 0; i < letters['letterArray'].length; i++) {
+      console.log('Falling letter ' + i);
+      fallingLetter(letters, i, 20);
+  }
+  checkLetterPos(letters, brain);
+  var typeIndicator = createTypeIndicator(letters);
+  blinkIndicator(typeIndicator);
 }
+
+function brain() {
+  $('#typeIndicator').remove();
+  var letters = {};
+  var fallingLetters = [];
+  letters = scene3TextToEnter('OK', 'bottom', 'padding-left', 50);
+  for (var i = 0; i < letters['letterArray'].length; i++) {
+      console.log('Falling letter ' + i);
+      fallingLetter(letters, i, 10);
+  }
+  checkLetterPos(letters, scene3Screen3);
+  var typeIndicator = createTypeIndicator(letters);
+  blinkIndicator(typeIndicator);
+}
+
+function scene3Screen3 () {
+  $('#typeIndicator').remove();
+}
+

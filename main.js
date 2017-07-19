@@ -42,10 +42,10 @@ function clearAnswerOptionBindings()
 
 var revealByLetter = function (targetChild, stringWordArray, interval, i, stringLength, count, fadeLength) {
   setTimeout(function () {
-  for (var j = 0; j < stringWordArray[i].length; j++) {
-    $('#' + targetChild + count + 'span' + i + 'letter' + j).delay(interval * j).fadeTo(fadeLength, 1);  // delays letter
-  }
-}, interval * stringLength);                                         // delays word
+    for (var j = 0; j < stringWordArray[i].length; j++) {
+      $('#' + targetChild + count + 'span' + i + 'letter' + j).delay(interval * j).fadeTo(fadeLength, 1);  // delays letter
+    }
+  }, interval * stringLength);                                         // delays word
 };
 
 var revealByWord = function(targetChild, stringWordArray, interval, stringLength, count, fadeLength = 0, byWord = 0) {
